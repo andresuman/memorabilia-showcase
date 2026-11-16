@@ -51,6 +51,18 @@
   function loadGu() {
     if (!state.gu) $('#gu-grid').innerHTML = '<div class="grid">' + skelGrid(6) + '</div>';
     const done = function (data) {
+      if (data.missing) {
+        state.guMissing = true;
+        state.gu = [];
+        state.checks.gu = data.checks || {};
+        setMenuLinks([['sheet', '#gu-lnk-sheet'], ['photos', '#gu-lnk-photos']], data.links || {});
+        $('#gu-summary').textContent = '';
+        showMissing($('#gu-grid'), data.missing, loadGu);
+        renderHub();
+        updateChecks();
+        return;
+      }
+      state.guMissing = false;
       state.gu = data.items || [];
       state.checks.gu = data.checks;
       setMenuLinks([['sheet', '#gu-lnk-sheet'], ['photos', '#gu-lnk-photos']], data.links || {});

@@ -81,10 +81,11 @@ test('a missing column is a clear error', function () {
   tabs['Autographed Memorabilia'][0] = AM_HEADER.filter(function (h) { return h !== 'Signer'; });
   throws(function () { load(tabs, folders).getCollection(); }, /Column "Signer" was not found in the Autographed Memorabilia tab/);
 });
-test('an empty tab is a clear error', function () {
+test('an empty tab says the collection is missing, not an error', function () {
   const tabs = defaultTabs();
   tabs['Game Used Memorabilia'] = [];
-  throws(function () { load(tabs, folders).getGameUsed(); }, /is empty/);
+  const g = load(tabs, folders).getGameUsed();
+  eq([g.missing, g.items], ['Game Used Memorabilia', []]);
 });
 test('checks: photos that match nothing, Drive copies, a name used twice, Item IDs not like AM-0000', function () {
   const tabs = defaultTabs();
@@ -120,6 +121,25 @@ test('a Game Used tab that cannot be read does not take Autographed Memorabilia 
   const c = load(tabs, {}).getCollection();
   eq([c.items.length > 0, c.items[1].usage, c.items[1].itemCert], [true, '', '']);
   eq(c.checks.guTab, ['Column "Usage" was not found in the Game Used Memorabilia tab.']);
+});
+test('one collection only: no Autographed Memorabilia tab — the collection is missing, Game Used is unaffected', function () {
+  const tabs = defaultTabs();
+  delete tabs['Autographed Memorabilia'];
+  const api = load(tabs, folders);
+  eq([api.getCollection().missing, api.getCollection().items], ['Autographed Memorabilia', []]);
+  eq(api.getGameUsed().items.length, 1);
+});
+test('one collection only: no Game Used tab and no Game Used folder — Autographed Memorabilia still shows', function () {
+  const tabs = defaultTabs();
+  delete tabs['Game Used Memorabilia'];
+  const c = load(tabs, {}).getCollection();
+  eq([c.missing, c.items.length, c.items[1].usage, c.items[1].video], [null, 2, '', null]);
+});
+test('one collection only: no Game Used Memorabilia tab — the collection is missing', function () {
+  const tabs = defaultTabs();
+  delete tabs['Game Used Memorabilia'];
+  const g = load(tabs, folders).getGameUsed();
+  eq([g.missing, g.items], ['Game Used Memorabilia', []]);
 });
 test('getGameUsed: the Inning column wherever it is (none: empty); the Play cell keeps its line breaks', function () {
   const header = GU_HEADER.concat(['Inning']);

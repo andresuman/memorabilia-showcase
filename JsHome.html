@@ -32,13 +32,18 @@
     const items = state.items, loaded = items.length > 0;
     const sigs = loaded ? allSigs() : [];
     const people = loaded ? unique(sigs.map(function (s) { return s.signer; })).length : 0;
-    $('#hub').innerHTML =
+    if (state.amMissing && state.guMissing) {
+      $('#hub').innerHTML = '<div class="empty"><h2>No collections set up yet</h2><p>Add an "Autographed Memorabilia" tab or a "Game Used Memorabilia" tab to your spreadsheet (see Setup in the README), then reload.</p></div>';
+      return;
+    }
+    // A collection whose tab is missing has no card: home shows only the collections that are set up.
+    const amCard = state.amMissing ? '' :
       '<a class="hub-card' + (loaded ? '' : ' loading') + '" href="#autographed" data-go="autographed">' +
         '<div class="hub-art" style="--art:linear-gradient(135deg,#E2560B 0%,#B0213A 38%,' + THEME + ' 100%)">' + hubIcon(ICON_SIGNATURE) +
           '<span class="big">' + (loaded ? items.length : HOLD_NUM) + '<small>items</small></span></div>' +
         '<div class="hub-body"><h2>Autographed Memorabilia</h2><p>' +
-          (loaded ? sigs.length + ' signatures from ' + people + ' people' : HOLD_TEXT) + '</p></div></a>' +
-      guCard();
+          (loaded ? sigs.length + ' signatures from ' + people + ' people' : HOLD_TEXT) + '</p></div></a>';
+    $('#hub').innerHTML = amCard + (state.guMissing ? '' : guCard());
   }
   function guCard() {
     const st = guStats();

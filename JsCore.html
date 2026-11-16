@@ -69,6 +69,7 @@
     currentId: null, trail: [], navDir: 0, checks: {}, detailHash: null, homeScreen: null, revealed: false, screen: null, hash: '',
     gu: null, g: guBlank(), currentGu: null,
     teamChecks: {},
+    amMissing: false, guMissing: false,
     guList: [] // the game-used items on screen, in order (for previous / next)
   };
 
@@ -619,6 +620,18 @@
   }
 
   function ready(data, replacing) {
+    if (data.missing) {
+      state.amMissing = true;
+      state.items = [];
+      state.checks.am = data.checks || {};
+      setMenuLinks([['sheet', '#lnk-sheet'], ['photos', '#lnk-photos'], ['logos', '#lnk-logos']], data.links || {});
+      $('#summary').textContent = '';
+      showMissing($('#grid'), data.missing, load);
+      renderHub();
+      updateChecks();
+      return;
+    }
+    state.amMissing = false;
     state.items = data.items || [];
     state.checks.am = data.checks;
     setMenuLinks([['sheet', '#lnk-sheet'], ['photos', '#lnk-photos'], ['logos', '#lnk-logos']], data.links || {});
@@ -640,6 +653,15 @@
 
   // Every reload button reads every collection and the Teams tab again (the panels link them to each other).
   function reloadAll() { loadTeams(); load(); loadGu(); loadLogos(); }
+
+  /* A collection whose tab is missing: the page says the collection is not set up yet (and the other
+     collection is unaffected), instead of the error page. */
+  function showMissing(grid, tab, retry) {
+    grid.innerHTML = '<div class="empty"><h2>No ' + esc(tab) + ' yet</h2><p>The spreadsheet has no tab named "' +
+      esc(tab) + '", or it could not be read. Add the tab (see Setup in the README) and reload — the other collection is unaffected.</p>' +
+      '<button type="button">Try again</button></div>';
+    grid.querySelector('button').addEventListener('click', retry);
+  }
 
   function fail(err) {
     $('#summary').textContent = '';

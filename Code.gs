@@ -14,6 +14,8 @@
  */
 
 // Setup: fill these in with your own spreadsheet and Drive folders (see README.md, "Setup").
+// Only the IDs of the collections you use are needed: leave the others blank (''). The Teams tab and the
+// logos folder are optional (team colors and logos only). A collection whose tab is missing simply does not appear.
 const CONFIG = {
   SPREADSHEET_ID: 'PASTE_YOUR_SPREADSHEET_ID_HERE',
   SHEET_NAME: 'Autographed Memorabilia',
@@ -55,7 +57,25 @@ function include(name) {
  * the Game Used row whose Signed column names it (Autographed Memorabilia has no item usage or certificate columns).
  */
 function getCollection() {
-  const t = readTable_(CONFIG.SHEET_NAME);
+  // A collection whose tab is not there (or cannot be read) is reported, not thrown: the page says the
+  // collection is not set up yet, and the other collection is unaffected. A missing column is still an
+  // error: the tab is there, its headers are wrong.
+  let t;
+  try {
+    t = readTable_(CONFIG.SHEET_NAME);
+  } catch (e) {
+    if (/was not found in the/.test(e.message)) throw e;
+    return {
+      items: [],
+      missing: CONFIG.SHEET_NAME,
+      checks: {},
+      links: {
+        sheet: sheetLink_(CONFIG.SHEET_NAME),
+        photos: 'https://drive.google.com/drive/folders/' + CONFIG.PHOTOS_FOLDER_ID,
+        logos: 'https://drive.google.com/drive/folders/' + CONFIG.LOGOS_FOLDER_ID
+      }
+    };
+  }
   // A Game Used tab that cannot be read (a renamed column) does not take this collection down with it: the items
   // show without their usage and certificate, and Things to check says why.
   let fromGu = {};
@@ -129,6 +149,7 @@ function getCollection() {
   checks.guTab = guTab;
   return {
     items: order.map(function (id) { return items[id]; }),
+    missing: null,
     checks: checks,
     links: {
       sheet: sheetLink_(CONFIG.SHEET_NAME),
@@ -149,7 +170,19 @@ function getCollection() {
  * game (team issued pants) has only the Season, never a made-up Game Date.
  */
 function getGameUsed() {
-  const t = readTable_(CONFIG.GU_SHEET_NAME);
+  // As in getCollection: a tab that is not there (or cannot be read) is reported, not thrown.
+  let t;
+  try {
+    t = readTable_(CONFIG.GU_SHEET_NAME);
+  } catch (e) {
+    if (/was not found in the/.test(e.message)) throw e;
+    return {
+      items: [],
+      missing: CONFIG.GU_SHEET_NAME,
+      checks: {},
+      links: { sheet: sheetLink_(CONFIG.GU_SHEET_NAME), photos: 'https://drive.google.com/drive/folders/' + CONFIG.GU_FOLDER_ID }
+    };
+  }
   const col = t.col;
   const text = text_;
   const C = {
@@ -199,6 +232,7 @@ function getGameUsed() {
   Object.assign(checks, gameUsedChecks_(items));
   return {
     items: items,
+    missing: null,
     checks: checks,
     links: { sheet: sheetLink_(CONFIG.GU_SHEET_NAME), photos: 'https://drive.google.com/drive/folders/' + CONFIG.GU_FOLDER_ID }
   };

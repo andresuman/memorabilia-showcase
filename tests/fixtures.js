@@ -32,6 +32,7 @@
       })], { price: 38.75, usage: 'Game Used', itemAuth: 'MLB', itemCert: 'YP000001/ABC', video: { ref: 'vid-1~0', size: 5000000, pieces: 3 } }),
       item('AM-0005', 'Jersey', 'Custom', ['land-2'], [sig('Dee Park', HERONS, '2025-08-05', 'Gift', { giftedBy: 'A Friend' })], { price: 120 })
     ],
+    missing: null,
     links: {}
   };
 
@@ -56,6 +57,7 @@
         auth: 'MLB', cert: 'VS000002', notes: 'Doubleheader, game 2.', order: 4 })
     ],
     checks: { orphans: [], copies: [], dupes: [], videos: [], badIds: [] },
+    missing: null,
     links: {}
   };
   // The Teams tab: every team's color (and league, stadium, former names).

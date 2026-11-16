@@ -21,7 +21,7 @@ You need a Google account, and [clasp](https://github.com/google/clasp) for the 
 
 ### 1. Make the spreadsheet
 
-Create a Google Sheet with three tabs, using the exact headers below (the app finds columns by header name, so reordering them breaks nothing, but renaming one does).
+Create a Google Sheet with the tabs for the collections you use (three at most), using the exact headers below (the app finds columns by header name, so reordering them breaks nothing, but renaming one does).
 
 **Autographed Memorabilia** — one row per signature; rows with the same Item ID are one item.
 
@@ -52,9 +52,13 @@ Create a Google Sheet with three tabs, using the exact headers below (the app fi
 
 - Color is written like `#2E1F8A`. Former Names holds old names of the team, separated by commas (a 2016 ball that says "Cleveland Indians" counts for the Guardians). Only Team is required; the other columns may be missing.
 
+### One collection only
+
+You don't need both collections. Someone with autographs only needs the Autographed Memorabilia tab and the Autographed photos folder; someone with game-used items only needs the Game Used Memorabilia tab and the Game Used folder. Leave the IDs of the collections you don't use blank (`''`) in `CONFIG`. The Teams tab and the Team Logos folder are optional too (they only give the teams their colors and logos). A collection whose tab is missing simply does not appear: its card is not on the home page, and its screen says it is not set up yet.
+
 ### 2. Make the Drive folders
 
-Create three folders in Google Drive (anywhere; the app finds them by ID, so renaming or moving them later changes nothing):
+Create the folders for the collections you use in Google Drive (three at most; anywhere — the app finds them by ID, so renaming or moving them later changes nothing):
 
 1. **Autographed photos** — photos of autographed items.
 2. **Game Used** — photos and videos of game-used items.
@@ -71,7 +75,7 @@ In `Code.gs`, fill in the `CONFIG` block at the top:
 - `LOGOS_FOLDER_ID` — the Team Logos folder.
 - `GU_FOLDER_ID` — the Game Used folder.
 
-The tab names (`SHEET_NAME`, `GU_SHEET_NAME`, `TEAMS_SHEET_NAME`) only need changing if you renamed the tabs.
+Only the IDs of the collections you use are needed; leave the others blank (`''`). The tab names (`SHEET_NAME`, `GU_SHEET_NAME`, `TEAMS_SHEET_NAME`) only need changing if you renamed the tabs.
 
 ### 4. Deploy
 
