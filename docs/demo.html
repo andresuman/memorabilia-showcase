@@ -64,10 +64,10 @@
     <h2>Create your collection</h2>
 <p>You don't need to know how to code. There is nothing to install and nothing to pay for — all you need is a Google account. Your collection lives in a spreadsheet and in Drive folders, and the app shows it as a website only you can open. The code runs in your Google account, in a tool called Google Apps Script.</p>
 <p>Four steps, about 15 minutes: copy the spreadsheet, make folders for your photos, copy the code, and publish the app.</p>
-<p><a href="https://andresuman.github.io/memorabilia-showcase/demo-app.html" target="_blank" rel="noopener">Try the demo</a> first if you haven't — it is a small sample collection you can click through, and it shows the real sample photos, team logos and videos of the play.</p>
+<p><a href="https://andresuman.github.io/memorabilia-showcase/demo-app.html" target="_blank" rel="noopener">Try the demo</a> first if you haven't — it is a small sample collection you can click through, with videos of the play. Its photos and team logos are placeholders, not real items — your own collection shows your real photos and logos.</p>
 <h3>Step 1 — Copy the template spreadsheet</h3>
 <ul>
-<li>Open the <a href="https://docs.google.com/spreadsheets/d/1LbIGqyrgWK1JepBPatQtHc_QKta18Ph3gcqjYT63uiY/copy" target="_blank" rel="noopener">template spreadsheet</a>.</li>
+<li>Open the <a href="https://docs.google.com/spreadsheets/d/1LbIGqyrgWK1JepBPatQtHc_QKta18Ph3gcqjYT63uiY/edit" target="_blank" rel="noopener">template spreadsheet</a>.</li>
 <li>Click <strong>File → Make a copy</strong>. This makes your own copy in your Drive — that copy is your collection's spreadsheet.</li>
 <li>It has three tabs: <strong>Autographed Memorabilia</strong> (one row per signature; rows with the same Item ID are one item), <strong>Game Used Memorabilia</strong> (one row per item), and <strong>Teams</strong> (one row per team, already filled in with all 32 NFL and 30 MLB teams).</li>
 <li>The template has a few sample items (real player and team names, made-up certificate numbers). Delete the sample rows and add your own — or keep them while you try the app out.</li>
@@ -81,16 +81,16 @@
 <li>Only make the folders for the collections you use — autographs only means just the Autographed photos folder.</li>
 <li>Put the folders anywhere you like. The app finds them by their ID, so renaming or moving them later changes nothing.</li>
 <li>Name each photo by its Item ID: one file per item (<code>AM-0015.jpg</code>, <code>GU-0001.jpg</code>). Extra photos get a number at the end (<code>AM-0015-2.jpg</code>, <code>AM-0015-3.jpg</code>).</li>
-<li>A video of the play goes in the Game Used folder as an H.264 MP4, named by the ball's hologram (<code>AB123456.mp4</code> for Cert Number <code>AB123456/ABC</code>).</li>
+<li>A video of the play goes in the Game Used folder as an MP4 video, named by the ball's hologram (<code>AB123456.mp4</code> for Cert Number <code>AB123456/ABC</code>).</li>
 <li>A team logo is a 256 × 256 transparent PNG, named exactly like the Team column (<code>Chicago Cubs.png</code>).</li>
 <li>To try the app before adding your own items, copy the sample files into your folders: <a href="https://drive.google.com/drive/folders/1t8b2KxvxxJXR3waaIj0MY8jyMCyo6fJN" target="_blank" rel="noopener">sample autographed photos</a> (6 photos), <a href="https://drive.google.com/drive/folders/1NdxQgHQX-ANtyQTX5lFGnj_5foF30cn-" target="_blank" rel="noopener">sample game-used photos and videos</a> (6 photos plus the two videos), and <a href="https://drive.google.com/drive/folders/134y3B1OYR_PKutPFloptfbL2qtkyZaCy" target="_blank" rel="noopener">sample team logos</a> (Baltimore Ravens and Baltimore Orioles). They are placeholders — a solid color with the item ID — meant to be replaced with your own photos.</li>
 <li>Drive doesn't copy a whole folder in one click: open a sample folder, select the files, and use File → Make a copy, then move the copies into your folder.</li>
 </ul>
 <h3>Step 3 — Copy the code into Apps Script</h3>
 <ul>
-<li>Download the code as a ZIP file: <a href="https://github.com/andresuman/memorabilia-showcase/archive/refs/heads/main.zip" target="_blank" rel="noopener">memorabilia-showcase-main.zip</a>. Unzip it. You don't need a GitHub account, and you don't need to install anything.</li>
+<li>Download the code as a ZIP file: <a href="https://github.com/andresuman/memorabilia-showcase/archive/refs/heads/main.zip" target="_blank" rel="noopener">memorabilia-showcase-main.zip</a>. Unzip it.</li>
 <li>Open your spreadsheet, then click <strong>Extensions → Apps Script</strong>. This opens the code editor for a project connected to your sheet.</li>
-<li>Click <strong>Code.gs</strong> in the editor, delete the starter code, and paste in the contents of the repo's <code>Code.gs</code>.</li>
+<li>Click <strong>Code.gs</strong> in the editor, delete the starter code, and paste in the contents of <code>Code.gs</code> from the folder you just unzipped.</li>
 <li>Create the HTML files. Click the <strong>+</strong> next to Files, choose <strong>HTML</strong>, and name it exactly (no extension). Do this once for each of these nine names, and paste each file's contents in:</li>
 </ul>
 <pre><code>Index
@@ -104,7 +104,7 @@ JsCrop
 JsApp
 </code></pre>
 <ul>
-<li>For <code>appsscript.json</code>: click the gear icon (Project Settings), turn on <strong>"Show 'appsscript.json' manifest file in editor"</strong>, then open <code>appsscript.json</code> in the editor and paste in the repo's <code>appsscript.json</code>.</li>
+<li>For <code>appsscript.json</code>: click the gear icon (Project Settings), turn on <strong>"Show 'appsscript.json' manifest file in editor"</strong>, then open <code>appsscript.json</code> in the editor and paste in the contents of <code>appsscript.json</code> from the folder you just unzipped.</li>
 </ul>
 <h4>Fill in your four IDs</h4>
 <ul>
@@ -140,12 +140,13 @@ JsApp
 <ul>
 <li><strong>A collection says it is not set up yet, or the page says the collection didn't load.</strong> Check the tab name in your spreadsheet — it must be exactly <code>Autographed Memorabilia</code> or <code>Game Used Memorabilia</code> — and check the spreadsheet ID in <code>CONFIG</code> (step 3).</li>
 <li><strong>Photos don't show.</strong> Check the file name matches the Item ID exactly (<code>AM-0015.jpg</code>, not <code>am-0015.jpg</code> or <code>AM-0015 (1).jpg</code>), that the photo is in the right folder, and that the folder ID in <code>CONFIG</code> is right.</li>
-<li><strong>The permissions screen appears again.</strong> That is the screen from step 4 — click Advanced, then Go to your project, then Allow. It appears once, the first time you open the app.</li>
+<li><strong>The page shows an error about a file it can't find.</strong> Check the nine HTML file names from step 3 — each must match exactly, with no <code>.html</code> at the end (<code>Index</code>, not <code>Index.html</code>).</li>
+<li><strong>The permissions screen appears again.</strong> That is the screen from step 4 — click Advanced, then Go to your project, then Allow. It normally appears only once, the first time you open the app.</li>
 <li><strong>You changed the code but the web app looks the same.</strong> The web app only updates when you make a new deployment: Deploy → New deployment → Web app (same settings as step 4). The URL stays the same.</li>
 <li><strong>The page is blank or shows an error.</strong> Reload it once. If it is still blank, check the IDs in <code>CONFIG</code> first — a wrong or missing ID is the most common cause.</li>
 </ul>
 <h3>Your collection stays private</h3>
-<p>The code is public, but your collection stays private. Each person deploys their own copy: their own spreadsheet, their own photos, their own web app, set to <strong>Only myself</strong>. Nothing about your collection is shared with anyone unless you choose to share it yourself. The app never writes to the spreadsheet — it reads the tabs and only creates new photo files in your Drive folders.</p>
+<p>Your collection stays private. It lives in your own spreadsheet and your own Drive folders, and the web app is set to <strong>Only myself</strong>, so only you can open it. Nothing about your collection is shared with anyone unless you choose to share it yourself. The app never writes to the spreadsheet — it reads the tabs and only creates new photo files in your Drive folders.</p>
 <h3>For developers</h3>
 <p><a href="https://github.com/andresuman/memorabilia-showcase/blob/main/DEVELOPERS.md" target="_blank" rel="noopener">DEVELOPERS.md</a> has the technical reference: the exact columns and their rules, how the pages work, the permissions in detail, the tests, and the one-click deploy with <code>clasp</code> for the terminal.</p>
 <h3>License</h3>
