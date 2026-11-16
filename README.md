@@ -4,6 +4,14 @@ Showcase and manage your autographed and game-used sports memorabilia — a web 
 
 **[Try the demo](https://andresuman.github.io/memorabilia-showcase/demo.html)** — a small sample collection you can click through, no account needed. It uses real player and team names so it reads like a real collection, and it shows the real sample photos, team logos and videos of the play; the certificate numbers are made up and the items are examples, not real items. Three sample items have no photo on purpose, so you can see what an item without a photo looks like.
 
+## Watch it in action
+
+![Memorabilia Showcase walkthrough](docs/memorabilia-showcase-video.mp4)
+
+A one-minute walkthrough of a real collection: the autographed and game-used collections, how they link, and how it all runs on Google Sheets and Drive.
+
+Music: "Energy" by Benjamin Tissot — https://www.bensound.com/royalty-free-music — License code: WSPALH883O9NVCED
+
 Two collections, linked to each other:
 
 - **Autographed Memorabilia** — your signed items, grouped by item, with every signature (who signed, when, where, how it was obtained, certificate, price, Instagram post) and photos.
