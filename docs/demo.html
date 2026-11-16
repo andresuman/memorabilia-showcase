@@ -25,7 +25,7 @@
   .demo-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
   .demo-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--h-btn-lg); padding: 0 24px; border: 0; border-radius: var(--r-pill); cursor: pointer; font-weight: 600; font-size: var(--fs-md); color: var(--ink); text-decoration: none; background: var(--surface); box-shadow: var(--lift); }
   .demo-btn-primary { background: var(--accent); color: #fff; }
-  .demo-github { margin: 16px 0 0; font-size: var(--fs-sm); }
+  .demo-github { display: flex; align-items: center; justify-content: center; gap: 8px 18px; flex-wrap: wrap; margin: 16px 0 0; font-size: var(--fs-sm); }
   .demo-github a { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; }
   .demo-github svg { width: 18px; height: 18px; flex: none; }
   .demo-setup { padding: 32px 32px 64px; }
@@ -35,7 +35,7 @@
   .demo-setup-card h4 { font-size: var(--fs-md); margin: 20px 0 8px; }
   .demo-setup-card p { margin: 0 0 12px; }
   .demo-setup-card a { color: var(--accent); }
-  .demo-setup-card code { background: var(--bg); border-radius: 4px; padding: 1px 5px; font-size: .92em; }
+  .demo-setup-card code { background: var(--bg); border-radius: 4px; padding: 1px 5px; font-size: .92em; overflow-wrap: anywhere; }
   .demo-setup-card pre { background: #14161B; color: #EEF0F3; border-radius: var(--r-sm); padding: 14px 16px; overflow-x: auto; margin: 0 0 14px; }
   .demo-setup-card pre code { background: none; padding: 0; color: inherit; }
   .demo-setup-card ol, .demo-setup-card ul { margin: 0 0 14px; padding-left: 24px; }
@@ -57,14 +57,14 @@
     <a class="demo-btn demo-btn-primary" id="demo-cta-try" href="demo-app.html" target="_blank" rel="noopener">Try the demo</a>
     <button class="demo-btn" id="demo-cta-setup" type="button">Create your collection</button>
   </div>
-  <p class="demo-github"><a href="https://github.com/andresuman/memorabilia-showcase"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>andresuman/memorabilia-showcase</a></p>
+  <p class="demo-github"><a href="https://github.com/andresuman/memorabilia-showcase"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>andresuman/memorabilia-showcase</a><a href="mailto:andresuman@gmail.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>andresuman@gmail.com</a><a href="https://www.instagram.com/andresuman/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>@andresuman</a></p>
 </div>
 <section class="demo-setup" id="demo-setup">
   <div class="demo-setup-card">
     <h2>Create your collection</h2>
 <p>You don't need to know how to code. There is nothing to install and nothing to pay for — all you need is a Google account. Your collection lives in a spreadsheet and in Drive folders, and the app shows it as a website only you can open. The code runs in your Google account, in a tool called Google Apps Script.</p>
-<p>Four steps, about 15 minutes: copy the spreadsheet, make folders for your photos, copy the code, and publish the app.</p>
-<p><a href="https://andresuman.github.io/memorabilia-showcase/demo-app.html" target="_blank" rel="noopener">Try the demo</a> first if you haven't — it is a small sample collection you can click through, with videos of the play. Its photos and team logos are placeholders, not real items — your own collection shows your real photos and logos.</p>
+<p>Four steps, about 30 minutes: copy the spreadsheet, make folders for your photos, copy the code, and publish the app.</p>
+<p><a href="https://andresuman.github.io/memorabilia-showcase/demo-app.html" target="_blank" rel="noopener">Try the demo</a> first if you haven't — it is a small sample collection you can click through, with videos of the play. Its photos and team logos are placeholders, not real items — your own collection shows your real photos and logos. The video at the top of the demo page walks through a real collection, so it shows different items than the demo.</p>
 <h3>Step 1 — Copy the template spreadsheet</h3>
 <ul>
 <li>Open the <a href="https://docs.google.com/spreadsheets/d/1LbIGqyrgWK1JepBPatQtHc_QKta18Ph3gcqjYT63uiY/edit" target="_blank" rel="noopener">template spreadsheet</a>.</li>
@@ -89,6 +89,8 @@
 <h3>Step 3 — Copy the code into Apps Script</h3>
 <ul>
 <li>Download the code as a ZIP file: <a href="https://github.com/andresuman/memorabilia-showcase/archive/refs/heads/main.zip" target="_blank" rel="noopener">memorabilia-showcase-main.zip</a>. Unzip it.</li>
+<li>The files you need are at the top level of the folder you just unzipped — <code>Code.gs</code>, the nine HTML files and <code>appsscript.json</code>. Ignore the other folders (<code>tests</code>, <code>docs</code>, <code>tools</code>).</li>
+<li>To copy a file: open it in a text editor first — Notepad on Windows, TextEdit on a Mac — then select all the text and copy it. Then paste it into the matching file in the Apps Script editor.</li>
 <li>Open your spreadsheet, then click <strong>Extensions → Apps Script</strong>. This opens the code editor for a project connected to your sheet.</li>
 <li>Click <strong>Code.gs</strong> in the editor, delete the starter code, and paste in the contents of <code>Code.gs</code> from the folder you just unzipped.</li>
 <li>Create the HTML files. Click the <strong>+</strong> next to Files, choose <strong>HTML</strong>, and name it exactly (no extension). Do this once for each of these nine names, and paste each file's contents in:</li>
@@ -108,7 +110,7 @@ JsApp
 </ul>
 <h4>Fill in your four IDs</h4>
 <ul>
-<li>At the top of <code>Code.gs</code>, find the <code>CONFIG</code> block. Replace each placeholder with your own ID, keeping the quotes:</li>
+<li>At the top of <code>Code.gs</code>, find the <code>CONFIG</code> block. Replace each placeholder with your own ID, keeping the quotes. Find each of these lines in the CONFIG block — other lines sit between them, so only replace the placeholder text inside the quotes; don't paste the block over it:</li>
 </ul>
 <pre><code>  SPREADSHEET_ID: 'PASTE_YOUR_SPREADSHEET_ID_HERE',
   PHOTOS_FOLDER_ID: 'PASTE_YOUR_AUTOGRAPHED_PHOTOS_FOLDER_ID_HERE',
@@ -125,9 +127,9 @@ JsApp
 <li>In the Apps Script editor, click <strong>Deploy → New deployment</strong>.</li>
 <li>Choose <strong>Web app</strong> as the type, <strong>Execute as: Me</strong>, and <strong>Who has access: Only myself</strong>.</li>
 <li>Click <strong>Deploy</strong>, then copy the Web app URL. That URL is your collection's website.</li>
-<li>Open the URL. The first time, Google shows a warning ("Google hasn't verified this app"). That is expected — this is your own code, running on your own account, and Google hasn't reviewed it because it's only for you. Click <strong>Advanced</strong>, then <strong>Go to [your project name] (unsafe)</strong>, then <strong>Allow</strong>.</li>
-<li>The app only asks for three things: to read your spreadsheet, to read and save photos in your Drive folders, and to fetch the small preview images. It never writes to your spreadsheet.</li>
-<li>That's it — your collection is live. Bookmark the URL; the address stays the same.</li>
+<li>Open the URL. The first time, Google shows a warning ("Google hasn't verified this app"). That is expected — this is your own code, running on your own account, and Google hasn't reviewed it because it's only for you. Click <strong>Advanced</strong>, then <strong>Go to [your project name] (unsafe)</strong>, then <strong>Allow</strong>. The warning can also appear when you click Deploy, before the URL shows — if it does, click Advanced, then Go to your project, then Allow, and then copy the URL.</li>
+<li>The app only asks for three things: to read your spreadsheet, to read and save photos in your Drive, and to fetch the small preview images. (Google doesn't offer a narrower permission — the app can technically see all your Drive files, but it only ever opens your photos, logos and videos folders.) It never writes to your spreadsheet.</li>
+<li>That's it — your collection is live. Bookmark the URL; the address stays the same — see the "You changed the code" bullet below for how to update it.</li>
 </ul>
 <h3>Only one collection?</h3>
 <ul>
@@ -138,12 +140,14 @@ JsApp
 </ul>
 <h3>If something doesn't work</h3>
 <ul>
-<li><strong>A collection says it is not set up yet, or the page says the collection didn't load.</strong> Check the tab name in your spreadsheet — it must be exactly <code>Autographed Memorabilia</code> or <code>Game Used Memorabilia</code> — and check the spreadsheet ID in <code>CONFIG</code> (step 3).</li>
+<li><strong>A collection says it is not set up yet.</strong> Check the tab name in your spreadsheet — it must be exactly <code>Autographed Memorabilia</code> or <code>Game Used Memorabilia</code> — and check the spreadsheet ID in <code>CONFIG</code> (step 3).</li>
+<li><strong>The page says the collection didn't load.</strong> Check the spreadsheet ID in <code>CONFIG</code> (step 3), and check that no column header was renamed — the app finds columns by their header name.</li>
 <li><strong>Photos don't show.</strong> Check the file name matches the Item ID exactly (<code>AM-0015.jpg</code>, not <code>am-0015.jpg</code> or <code>AM-0015 (1).jpg</code>), that the photo is in the right folder, and that the folder ID in <code>CONFIG</code> is right.</li>
 <li><strong>The page shows an error about a file it can't find.</strong> Check the nine HTML file names from step 3 — each must match exactly, with no <code>.html</code> at the end (<code>Index</code>, not <code>Index.html</code>).</li>
 <li><strong>The permissions screen appears again.</strong> That is the screen from step 4 — click Advanced, then Go to your project, then Allow. It normally appears only once, the first time you open the app.</li>
-<li><strong>You changed the code but the web app looks the same.</strong> The web app only updates when you make a new deployment: Deploy → New deployment → Web app (same settings as step 4). The URL stays the same.</li>
+<li><strong>You changed the code but the web app looks the same.</strong> The web app only updates when you publish a new version of the same deployment: <strong>Deploy → Manage deployments → click the pencil on your deployment → Version: New version → Deploy</strong>. The URL stays the same. Don't use New deployment for updates — that makes a second web app with a new URL.</li>
 <li><strong>The page is blank or shows an error.</strong> Reload it once. If it is still blank, check the IDs in <code>CONFIG</code> first — a wrong or missing ID is the most common cause.</li>
+<li><strong>Still stuck?</strong> Contact me — <a href="mailto:andresuman@gmail.com" target="_blank" rel="noopener">andresuman@gmail.com</a> or <a href="https://www.instagram.com/andresuman/" target="_blank" rel="noopener">@andresuman on Instagram</a>.</li>
 </ul>
 <h3>Your collection stays private</h3>
 <p>Your collection stays private. It lives in your own spreadsheet and your own Drive folders, and the web app is set to <strong>Only myself</strong>, so only you can open it. Nothing about your collection is shared with anyone unless you choose to share it yourself. The app never writes to the spreadsheet — it reads the tabs and only creates new photo files in your Drive folders.</p>

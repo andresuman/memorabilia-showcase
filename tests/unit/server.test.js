@@ -155,7 +155,7 @@ test('getGameUsed: one item per row, games, yes columns, signed IDs, photos, vid
   tabs['Game Used Memorabilia'] = [GU_HEADER,
     ['GU-0001', 'Baseball', '', 'Game Used', 'Baseball', 'Harbor City Herons', '', SERIAL_2023_07_23, '', 'Cedar Falls Falcons', 'Harbor City Herons', '4 - 1', 'l',
       'Seaside Stadium', 'Yes', 'Leo Vance', 'Dario Fontaine', 'Double', 'MLB', 'yp000002/ABC', '', 'AM-0002, junk', SERIAL_2023_07_23, 'Herons Authentics', 12.5, 'Note.'],
-    ['GU-0002', 'Gloves', 'Black', 'Game Used', 'Football', 'Bay City Breakers', 'Sam Rivers', '', 2021, '', '', '', '', '', '', '', '', '', 'Metabilia', 10198, 'yes'],
+    ['GU-0002', 'Gloves', 'Black', 'Game Used', 'Football', 'Bay City Breakers', 'Sam Rivers', '', 2021, '', '', '', '', '', '', '', '', '', 'Metabilia', 10001, 'yes'],
     ['GU-0002', 'Towel'],
     ['GU-3', 'Towel'],
     ['GU-0004', 'Baseball', '', 'Game Used', 'Baseball', 'Herons', '', SERIAL_2023_07_23, 2012, 'Cedar Falls Falcons', 'Harbor City Herons'],
@@ -169,7 +169,7 @@ test('getGameUsed: one item per row, games, yes columns, signed IDs, photos, vid
   eq([a.date, a.away, a.home, a.score, a.result, a.attended, a.atBat, a.pitching, a.play], ['2023-07-23', 'Cedar Falls Falcons', 'Harbor City Herons', '4 - 1', 'L', true, 'Leo Vance', 'Dario Fontaine', 'Double']);
   eq([a.signed, a.bought, a.at, a.price, a.photoMatched, a.photos], [['AM-0002'], '2023-07-23', 'Herons Authentics', 12.5, false, ['file1~0', 'file2~0']]);
   eq(a.video, { ref: 'file3~0', size: 10, pieces: 1 }, 'the video named by its hologram');
-  eq([b.player, b.cert, b.photoMatched, b.attended, b.price, b.video], ['Sam Rivers', '10198', true, false, null, null]);
+  eq([b.player, b.cert, b.photoMatched, b.attended, b.price, b.video], ['Sam Rivers', '10001', true, false, null, null]);
   eq([a.detail, a.season, b.detail, b.season], ['', '', 'Black', '2021'], 'variant and season');
   eq([g.checks.orphans, g.checks.videos, g.checks.badIds], [['GU-0099.jpg'], ['YP999999.mp4'], ['GU-0002 (row 4)', 'GU-3 (row 5)']]);
   eq([g.checks.noSeason, g.checks.seasons, g.checks.teams], [['GU-0001 (row 2)'], ['GU-0004 (row 6): 2012, game in 2023'], ['GU-0004 (row 6): Herons']],

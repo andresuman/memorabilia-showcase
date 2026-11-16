@@ -99,7 +99,7 @@ test('game used: the panel (scoreboard from his side, the moment, who used it, t
   eq(await page.$eval('#sheet .bought', function (e) { return e.textContent; }), 'Obtained Aug 29, 2021Obtained at Seaside Stadium', 'obtained: some are gifts or caught (the bag shows; the word is for screen readers)');
   await go(page, 'game-used/GU-0003');
   eq(await page.$$eval('#sheet .line-fact', function (x) { return x.map(function (e) { return e.textContent; }); }),
-    ['Used by Cole Barrett', 'Authenticated by Metabilia · AB23462', 'Photo matched'], 'who, then the certificate and the photo match');
+    ['Used by Cole Barrett', 'Authenticated by Metabilia · AB000001', 'Photo matched'], 'who, then the certificate and the photo match');
   await go(page, 'game-used/GU-0002');
   await page.click('#sheet .mh-signed [data-go="AM-0004"]'); await settle(page);
   eq(await hash(page), '#AM-0004');

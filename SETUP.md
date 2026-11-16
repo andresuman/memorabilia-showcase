@@ -2,9 +2,9 @@
 
 You don't need to know how to code. There is nothing to install and nothing to pay for — all you need is a Google account. Your collection lives in a spreadsheet and in Drive folders, and the app shows it as a website only you can open. The code runs in your Google account, in a tool called Google Apps Script.
 
-Four steps, about 15 minutes: copy the spreadsheet, make folders for your photos, copy the code, and publish the app.
+Four steps, about 30 minutes: copy the spreadsheet, make folders for your photos, copy the code, and publish the app.
 
-[Try the demo](https://andresuman.github.io/memorabilia-showcase/demo-app.html) first if you haven't — it is a small sample collection you can click through, with videos of the play. Its photos and team logos are placeholders, not real items — your own collection shows your real photos and logos.
+[Try the demo](https://andresuman.github.io/memorabilia-showcase/demo-app.html) first if you haven't — it is a small sample collection you can click through, with videos of the play. Its photos and team logos are placeholders, not real items — your own collection shows your real photos and logos. The video at the top of the demo page walks through a real collection, so it shows different items than the demo.
 
 ## Step 1 — Copy the template spreadsheet
 
@@ -30,6 +30,8 @@ Four steps, about 15 minutes: copy the spreadsheet, make folders for your photos
 ## Step 3 — Copy the code into Apps Script
 
 - Download the code as a ZIP file: [memorabilia-showcase-main.zip](https://github.com/andresuman/memorabilia-showcase/archive/refs/heads/main.zip). Unzip it.
+- The files you need are at the top level of the folder you just unzipped — `Code.gs`, the nine HTML files and `appsscript.json`. Ignore the other folders (`tests`, `docs`, `tools`).
+- To copy a file: open it in a text editor first — Notepad on Windows, TextEdit on a Mac — then select all the text and copy it. Then paste it into the matching file in the Apps Script editor.
 - Open your spreadsheet, then click **Extensions → Apps Script**. This opens the code editor for a project connected to your sheet.
 - Click **Code.gs** in the editor, delete the starter code, and paste in the contents of `Code.gs` from the folder you just unzipped.
 - Create the HTML files. Click the **+** next to Files, choose **HTML**, and name it exactly (no extension). Do this once for each of these nine names, and paste each file's contents in:
@@ -50,7 +52,7 @@ JsApp
 
 ### Fill in your four IDs
 
-- At the top of `Code.gs`, find the `CONFIG` block. Replace each placeholder with your own ID, keeping the quotes:
+- At the top of `Code.gs`, find the `CONFIG` block. Replace each placeholder with your own ID, keeping the quotes. Find each of these lines in the CONFIG block — other lines sit between them, so only replace the placeholder text inside the quotes; don't paste the block over it:
 
 ```
   SPREADSHEET_ID: 'PASTE_YOUR_SPREADSHEET_ID_HERE',
@@ -68,9 +70,9 @@ JsApp
 - In the Apps Script editor, click **Deploy → New deployment**.
 - Choose **Web app** as the type, **Execute as: Me**, and **Who has access: Only myself**.
 - Click **Deploy**, then copy the Web app URL. That URL is your collection's website.
-- Open the URL. The first time, Google shows a warning ("Google hasn't verified this app"). That is expected — this is your own code, running on your own account, and Google hasn't reviewed it because it's only for you. Click **Advanced**, then **Go to [your project name] (unsafe)**, then **Allow**.
-- The app only asks for three things: to read your spreadsheet, to read and save photos in your Drive folders, and to fetch the small preview images. It never writes to your spreadsheet.
-- That's it — your collection is live. Bookmark the URL; the address stays the same.
+- Open the URL. The first time, Google shows a warning ("Google hasn't verified this app"). That is expected — this is your own code, running on your own account, and Google hasn't reviewed it because it's only for you. Click **Advanced**, then **Go to [your project name] (unsafe)**, then **Allow**. The warning can also appear when you click Deploy, before the URL shows — if it does, click Advanced, then Go to your project, then Allow, and then copy the URL.
+- The app only asks for three things: to read your spreadsheet, to read and save photos in your Drive, and to fetch the small preview images. (Google doesn't offer a narrower permission — the app can technically see all your Drive files, but it only ever opens your photos, logos and videos folders.) It never writes to your spreadsheet.
+- That's it — your collection is live. Bookmark the URL; the address stays the same — see the "You changed the code" bullet below for how to update it.
 
 ## Only one collection?
 
@@ -81,12 +83,14 @@ JsApp
 
 ## If something doesn't work
 
-- **A collection says it is not set up yet, or the page says the collection didn't load.** Check the tab name in your spreadsheet — it must be exactly `Autographed Memorabilia` or `Game Used Memorabilia` — and check the spreadsheet ID in `CONFIG` (step 3).
+- **A collection says it is not set up yet.** Check the tab name in your spreadsheet — it must be exactly `Autographed Memorabilia` or `Game Used Memorabilia` — and check the spreadsheet ID in `CONFIG` (step 3).
+- **The page says the collection didn't load.** Check the spreadsheet ID in `CONFIG` (step 3), and check that no column header was renamed — the app finds columns by their header name.
 - **Photos don't show.** Check the file name matches the Item ID exactly (`AM-0015.jpg`, not `am-0015.jpg` or `AM-0015 (1).jpg`), that the photo is in the right folder, and that the folder ID in `CONFIG` is right.
 - **The page shows an error about a file it can't find.** Check the nine HTML file names from step 3 — each must match exactly, with no `.html` at the end (`Index`, not `Index.html`).
 - **The permissions screen appears again.** That is the screen from step 4 — click Advanced, then Go to your project, then Allow. It normally appears only once, the first time you open the app.
-- **You changed the code but the web app looks the same.** The web app only updates when you make a new deployment: Deploy → New deployment → Web app (same settings as step 4). The URL stays the same.
+- **You changed the code but the web app looks the same.** The web app only updates when you publish a new version of the same deployment: **Deploy → Manage deployments → click the pencil on your deployment → Version: New version → Deploy**. The URL stays the same. Don't use New deployment for updates — that makes a second web app with a new URL.
 - **The page is blank or shows an error.** Reload it once. If it is still blank, check the IDs in `CONFIG` first — a wrong or missing ID is the most common cause.
+- **Still stuck?** Contact me — [andresuman@gmail.com](mailto:andresuman@gmail.com) or [@andresuman on Instagram](https://www.instagram.com/andresuman/).
 
 ## Your collection stays private
 

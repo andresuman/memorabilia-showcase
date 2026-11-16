@@ -80,13 +80,13 @@ If a new feature needs another scope, add it here and in `appsscript.json` on pu
 
 - `#` home: one card per collection: Autographed Memorabilia, Game Used.
 - `#autographed`: Autographed Memorabilia; `#AM-0015` opens one item.
-- `#game-used`: Game Used Memorabilia, one card per item used in a game (or team issued, practice used), signed or not, newest season first (the Season column, filled for every item: the year the season started, so a game in January counts in the season before); in a season, newest game first and an item with no game after its games, at the start of its season; items with no season last. `#game-used/GU-0001` opens one item.
+- `#game-used`: Game Used Memorabilia, one card per item used in a game (or team issued, practice used), signed or not, newest season first (the Season column: the year the season started, so a game in January counts in the season before); in a season, newest game first and an item with no game after its games, at the start of its season; items with no season last. `#game-used/GU-0001` opens one item.
 
 ## Tests
 
 The `tests` folder checks the app before a deploy, without touching the spreadsheet or Drive. It uses a small made-up collection (`tests/fixtures.js`: no real names, prices or photos) and a stand-in for the Apps Script server (`tests/mock-gas.js`). Three layers, from the fastest:
 
-- `npm run test:unit` (Node's own test runner, needs nothing installed, under a second):
+- `npm run test:unit` (Node's own test runner, needs only Node installed, under a second):
   - `tests/unit/code.test.js`: what a browser would not report and the project's rules: the same top-level name in two `Js*.html` files (the later one silently replaces the first), a name that clashes with a browser global, code nobody uses any more, every reload button spinning while the app checks the spreadsheet; least privilege (only the three permissions of *Permissions*, the web app for the deployer only, no `SpreadsheetApp`), and Code.gs creating only JPEG photos (no rename, move or delete in Drive).
   - `tests/unit/server.test.js`: `Code.gs` in Node, with the Google services replaced by fakes (`tests/unit/gas.js`): reading the tabs by column name, dates, prices, photos and their order, files in the trash, the things to check, logos and the cache, photo sizes, videos, the photo upload and its checks.
   - `tests/unit/contract.test.js`: the test data (and the demo data, `tests/demo-data.js`) has the shape `Code.gs` really sends (no field on one side only, the same kind of value), and the stand-in server answers exactly the functions `Code.gs` offers. Without it a field renamed on one side would pass both suites and break the app.
@@ -111,6 +111,8 @@ The landing page defines the few CSS variables it uses (the same values as `Styl
 | File | What it is |
 |---|---|
 | `README.md` | Short front page: what it is, the two collections, the privacy point, and a link to the demo page. The demo, the video and the setup steps live on the demo page and in `SETUP.md`, not here. |
+| `LICENSE` | MIT License. The copyright line is the only personal name in the tree. |
+| `.gitignore` | Keeps local files out of the repo: node_modules, test output, and your clasp config (`.clasp.json`). |
 | `SETUP.md` | Setup guide for everyone, in plain language (also rendered into the demo page). |
 | `DEVELOPERS.md` | This file: the technical reference. |
 | `Code.gs` | Server (Apps Script): reads the **Autographed Memorabilia**, **Game Used Memorabilia** and **Teams** tabs by column name, and serves team logos and photos from Drive as data URIs. |
@@ -121,7 +123,7 @@ The landing page defines the few CSS variables it uses (the same values as `Styl
 | `JsHome.html`, `JsAutographed.html`, `JsGameUsed.html` | One file per screen. |
 | `JsCrop.html` | Framing a photo before it is saved: square frame to drag and pinch, "Use square" or "Keep original". |
 | `JsApp.html` | Routing between screens, menus, events, phone gestures, adding photos, start. |
-| `appsscript.json` | Apps Script manifest: time zone, V8, web app (Execute as Me / Only myself), the Sheets advanced service and the only permissions the app may use (see *Permissions*). |
+| `appsscript.json` | Apps Script manifest: time zone, V8, web app (Execute as Me / Only myself), the Sheets advanced service and the only permissions the app may use (see *Permissions*). The time zone is set to America/New_York — change it there if you're elsewhere. |
 | `deploy.command`, `.clasp.json.example`, `.claspignore` | One-click deploy with clasp (see above). Copy `.clasp.json.example` to `.clasp.json` and put your Script ID in it, or let `deploy.command` do it on its first run. `.clasp.json` is gitignored and never committed. |
 | `docs/demo.html` | The public demo page: a standalone landing page — the walkthrough video, the calls to action, the GitHub logo and repo name, and the setup guide. No app, no data. Rebuilt with `npm run demo`. Served by GitHub Pages. |
 | `docs/demo-app.html` | The bare demo: the app with the sample data (`tests/demo-data.js`: real player and team names, made-up certificate numbers), with the sample photos, logos and videos from `tests/sample-assets.json` inlined. Opened in a new tab by the landing's **Try the demo** button. Rebuilt with `npm run demo`. Served by GitHub Pages. |

@@ -13,7 +13,7 @@ A signed item links to its game-used piece ("Also in Game Used") and back. You c
 
 ## Your collection stays private
 
-The code is public, but your collection stays private. Each person deploys their own copy: their own spreadsheet, their own photos, their own web app, set to **Only myself**. Nothing about your collection is shared with anyone unless you choose to share it yourself.
+Your collection stays private. It lives in your own spreadsheet and your own Drive folders, and the web app is set to **Only myself**, so only you can open it. Nothing about your collection is shared with anyone unless you choose to share it yourself.
 
 ## Full guide
 

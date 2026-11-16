@@ -101,7 +101,7 @@ function landingCss() {
     '  .demo-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }\n' +
     '  .demo-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--h-btn-lg); padding: 0 24px; border: 0; border-radius: var(--r-pill); cursor: pointer; font-weight: 600; font-size: var(--fs-md); color: var(--ink); text-decoration: none; background: var(--surface); box-shadow: var(--lift); }\n' +
     '  .demo-btn-primary { background: var(--accent); color: #fff; }\n' +
-    '  .demo-github { margin: 16px 0 0; font-size: var(--fs-sm); }\n' +
+    '  .demo-github { display: flex; align-items: center; justify-content: center; gap: 8px 18px; flex-wrap: wrap; margin: 16px 0 0; font-size: var(--fs-sm); }\n' +
     '  .demo-github a { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; }\n' +
     '  .demo-github svg { width: 18px; height: 18px; flex: none; }\n' +
     '  .demo-setup { padding: 32px 32px 64px; }\n' +
@@ -111,7 +111,7 @@ function landingCss() {
     '  .demo-setup-card h4 { font-size: var(--fs-md); margin: 20px 0 8px; }\n' +
     '  .demo-setup-card p { margin: 0 0 12px; }\n' +
     '  .demo-setup-card a { color: var(--accent); }\n' +
-    '  .demo-setup-card code { background: var(--bg); border-radius: 4px; padding: 1px 5px; font-size: .92em; }\n' +
+    '  .demo-setup-card code { background: var(--bg); border-radius: 4px; padding: 1px 5px; font-size: .92em; overflow-wrap: anywhere; }\n' +
     '  .demo-setup-card pre { background: #14161B; color: #EEF0F3; border-radius: var(--r-sm); padding: 14px 16px; overflow-x: auto; margin: 0 0 14px; }\n' +
     '  .demo-setup-card pre code { background: none; padding: 0; color: inherit; }\n' +
     '  .demo-setup-card ol, .demo-setup-card ul { margin: 0 0 14px; padding-left: 24px; }\n' +
@@ -134,7 +134,7 @@ function landingHero() {
     '    <a class="demo-btn demo-btn-primary" id="demo-cta-try" href="demo-app.html" target="_blank" rel="noopener">Try the demo</a>\n' +
     '    <button class="demo-btn" id="demo-cta-setup" type="button">Create your collection</button>\n' +
     '  </div>\n' +
-    '  <p class="demo-github"><a href="https://github.com/andresuman/memorabilia-showcase"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>andresuman/memorabilia-showcase</a></p>\n' +
+    '  <p class="demo-github"><a href="https://github.com/andresuman/memorabilia-showcase"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>andresuman/memorabilia-showcase</a><a href="mailto:andresuman@gmail.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>andresuman@gmail.com</a><a href="https://www.instagram.com/andresuman/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>@andresuman</a></p>\n' +
     '</div>\n';
 }
 

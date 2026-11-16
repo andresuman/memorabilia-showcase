@@ -44,12 +44,12 @@
   root.TEST_GU = {
     items: [
       gu('GU-0001', 'Baseball', { date: '2025-06-15', season: '2025', away: 'Cedar Falls Falcons', home: HERONS, score: '2 - 11', result: 'W', stadium: 'Seaside Stadium',
-        attended: true, inning: 'Bottom of 3rd', atBat: 'Leo Vance', pitching: 'Dario Fontaine', play: 'Ball', auth: 'MLB', cert: 'PX400589/SVZ', bought: '2025-06-15', at: 'Herons Authentics',
+        attended: true, inning: 'Bottom of 3rd', atBat: 'Leo Vance', pitching: 'Dario Fontaine', play: 'Ball', auth: 'MLB', cert: 'PX000001/SVZ', bought: '2025-06-20', at: 'Herons Authentics',
         video: { ref: 'vid-2~0', size: 1000, pieces: 1 }, order: 0 }),
       gu('GU-0002', 'Baseball', { date: '2023-06-02', season: '2023', away: HERONS, home: 'Golden Bay Gulls', score: '3 - 2', result: 'W', stadium: 'Bayview Park',
         atBat: 'Derek Moss', pitching: 'Tomas Ferreira', play: 'Grounds out.', auth: 'MLB', cert: 'YP000001/ABC', signed: ['AM-0004'], order: 1 }),
       gu('GU-0003', 'Gloves', { sport: 'Football', team: BREAKERS, player: 'Cole Barrett', date: '2025-09-14', season: '2025', away: 'Lake City Lumberjacks', home: BREAKERS, score: '17 - 41', result: 'W',
-        stadium: 'Bayfront Stadium', attended: true, auth: 'Metabilia', cert: 'AB23462', photoMatched: true, bought: '2025-10-19', at: 'Metabilia', price: 15.97,
+        stadium: 'Bayfront Stadium', attended: true, auth: 'Metabilia', cert: 'AB000001', photoMatched: true, bought: '2025-10-21', at: 'Metabilia', price: 16.50,
         photos: ['land-3'], order: 2 }),
       gu('GU-0004', 'Batting Helmet', { usage: 'Team Issued', player: 'Nate Coleman', auth: 'MLB', cert: 'JD000001', signed: ['AM-0002'], bought: '2021-08-29', at: 'Seaside Stadium', order: 3 }),
       gu('GU-0006', 'Pants', { usage: 'Team Issued', sport: 'Football', team: BREAKERS, detail: 'White', season: '2023', notes: 'Size 36.', order: 5 }),
