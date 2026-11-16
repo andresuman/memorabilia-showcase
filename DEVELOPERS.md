@@ -22,7 +22,7 @@ One row per signature; rows with the same Item ID are one item.
 One row per item.
 
 | Item ID | Item Type | Item Detail | Usage | Sport | Team | Player | Game Date | Season | Away Team | Home Team | Score | Result | Stadium | Attended | Inning | At Bat | Pitching | Play | Authenticator | Cert Number | Photo Matched | Signed | Date Obtained | Obtained At | Price (USD) | Notes |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 
 - Item ID looks like `GU-0001`. Usage is one of: Game Used, Practice Used, Team Issued.
 - Game Date is a date; Season is the year the season started (an NFL game in January counts in the season before). Item Detail, Season and Inning may be left out entirely (the column can be missing).
@@ -91,24 +91,26 @@ The `tests` folder checks the app before a deploy, without touching the spreadsh
   - `tests/unit/server.test.js`: `Code.gs` in Node, with the Google services replaced by fakes (`tests/unit/gas.js`): reading the tabs by column name, dates, prices, photos and their order, files in the trash, the things to check, logos and the cache, photo sizes, videos, the photo upload and its checks.
   - `tests/unit/contract.test.js`: the test data (and the demo data, `tests/demo-data.js`) has the shape `Code.gs` really sends (no field on one side only, the same kind of value), and the stand-in server answers exactly the functions `Code.gs` offers. Without it a field renamed on one side would pass both suites and break the app.
 - `npm run test:ui` (Playwright, in Chromium): the pages, a fresh browser page per test so no test depends on another. Every test runs on an iPhone-sized screen; those tagged `@both` (layout, the Filters sheet or panel, touch or mouse) on a computer screen too, and the keyboard ones (`@desktop`) only there. No fixed waits: a test goes on when the page is quiet (no short timer, animation or browser database write in progress). A JavaScript error fails the test it happened in.
-- `npm test` runs both; `npm run shots` saves screenshots of every screen on both sizes to `tests/out/shots/` (to look at; they check nothing); `npm run preview` builds `tests/out/preview.html`, the page with the test data, to open in a browser; `npm run demo` rebuilds `docs/demo.html` (the public demo page, with the landing) and `docs/demo-app.html` (the bare demo, no landing), both from the sample data (`tests/demo-data.js`), inlining the sample photos, logos and videos from `tests/sample-assets.json` into them.
+- `npm test` runs both; `npm run shots` saves screenshots of every screen on both sizes to `tests/out/shots/` (to look at; they check nothing); `npm run preview` builds `tests/out/preview.html`, the page with the test data, to open in a browser; `npm run demo` rebuilds the two public demo pages: `docs/demo.html` (the landing page, no app) and `docs/demo-app.html` (the bare demo, built from the sample data in `tests/demo-data.js`, inlining the sample photos, logos and videos from `tests/sample-assets.json` into it).
 
 Playwright once: `npm install`, then `npx playwright install chromium`. `deploy.command` runs every test once before each deploy (the page tests when Playwright is installed); a failing test stops the deploy and names itself. Only `Code.gs`, the `.html` files at the top of the repository and `appsscript.json` go to Apps Script (`.claspignore`), so nothing in `tests` is published.
 
 ## The demo page
 
-`docs/demo.html` is the public demo page, served by GitHub Pages. It is built by `npm run demo` (`node tests/build-preview.js --data demo-data.js --out docs/demo.html --demo`) from the sample data (`tests/demo-data.js`: real player and team names, made-up certificate numbers), with the sample photos, logos and videos from `tests/sample-assets.json` inlined. `npm run demo` also builds `docs/demo-app.html` (the same build without `--demo`): the bare demo, no landing, which the landing's **Try the demo** button opens in a new tab. **Don't edit `docs/demo.html` or `docs/demo-app.html` by hand** — the next build overwrites them.
+`docs/demo.html` is the public demo page, served by GitHub Pages. It is a standalone landing page, built by `npm run demo` (`node tests/build-preview.js --landing --out docs/demo.html`) — no app, no data. `npm run demo` also builds `docs/demo-app.html` (`node tests/build-preview.js --data demo-data.js --out docs/demo-app.html`): the bare demo, built from the sample data (`tests/demo-data.js`: real player and team names, made-up certificate numbers), with the sample photos, logos and videos from `tests/sample-assets.json` inlined, which the landing's **Try the demo** button opens in a new tab. **Don't edit `docs/demo.html` or `docs/demo-app.html` by hand** — the next build overwrites them.
 
-The `--demo` build adds the landing, which the preview (`npm run preview`, `tests/out/preview.html`) does not have, so the UI tests see exactly what a deployed copy shows:
+The landing page has:
 
-- A landing at the top of the home view: the walkthrough video (`docs/memorabilia-showcase-video.mp4`, next to the page, played inline), two calls to action — **Try the demo** (opens the bare demo, `docs/demo-app.html`, in a new tab) and **Create your collection** (scrolls to the setup guide) — and the GitHub logo and repo name (`andresuman/memorabilia-showcase`), linking to the code. It lives inside the home view so the router's scroll handling (scroll to the top of the screen on first visit) still lands on the right screen.
-- The setup guide at the bottom of the page: [SETUP.md](SETUP.md) rendered to HTML by a small converter in `tests/build-preview.js` (headings, paragraphs, lists, links, bold, inline code, fenced code blocks — no tables; links open in a new tab), shown only while the home view is open. SETUP.md is the single source: edit it, rebuild the demo, and the page follows. The converter skips SETUP.md's first heading and demotes the rest one level, so the guide sits under the page's own "Create your collection" heading.
+- The walkthrough video (`docs/memorabilia-showcase-video.mp4`, next to the page, played inline), two calls to action — **Try the demo** (opens the bare demo, `docs/demo-app.html`, in a new tab) and **Create your collection** (scrolls to the setup guide) — and the GitHub logo and repo name (`andresuman/memorabilia-showcase`), linking to the code.
+- The setup guide at the bottom of the page: [SETUP.md](SETUP.md) rendered to HTML by a small converter in `tests/build-preview.js` (headings, paragraphs, lists, links, bold, inline code, fenced code blocks — no tables; links open in a new tab). SETUP.md is the single source: edit it, rebuild the demo, and the page follows. The converter skips SETUP.md's first heading and demotes the rest one level, so the guide sits under the page's own "Create your collection" heading.
+
+The landing page defines the few CSS variables it uses (the same values as `Styles.html` `:root`) so it looks the same without the app. The preview (`npm run preview`, `tests/out/preview.html`) is the bare app with the test data, so the UI tests see exactly what a deployed copy shows.
 
 ## Files
 
 | File | What it is |
 |---|---|
-| `README.md` | Short front page: what it is, the demo, the video, the 4 setup steps. |
+| `README.md` | Short front page: what it is, the two collections, the privacy point, and a link to the demo page. The demo, the video and the setup steps live on the demo page and in `SETUP.md`, not here. |
 | `SETUP.md` | Setup guide for everyone, in plain language (also rendered into the demo page). |
 | `DEVELOPERS.md` | This file: the technical reference. |
 | `Code.gs` | Server (Apps Script): reads the **Autographed Memorabilia**, **Game Used Memorabilia** and **Teams** tabs by column name, and serves team logos and photos from Drive as data URIs. |
@@ -121,9 +123,9 @@ The `--demo` build adds the landing, which the preview (`npm run preview`, `test
 | `JsApp.html` | Routing between screens, menus, events, phone gestures, adding photos, start. |
 | `appsscript.json` | Apps Script manifest: time zone, V8, web app (Execute as Me / Only myself), the Sheets advanced service and the only permissions the app may use (see *Permissions*). |
 | `deploy.command`, `.clasp.json.example`, `.claspignore` | One-click deploy with clasp (see above). Copy `.clasp.json.example` to `.clasp.json` and put your Script ID in it, or let `deploy.command` do it on its first run. `.clasp.json` is gitignored and never committed. |
-| `docs/demo.html` | The public demo page: the app with the sample data (`tests/demo-data.js`: real player and team names, made-up certificate numbers), with the sample photos, logos and videos from `tests/sample-assets.json` inlined, plus the landing (video, calls to action, GitHub logo and repo name) and the setup guide, rebuilt with `npm run demo`. Served by GitHub Pages. |
-| `docs/demo-app.html` | The bare demo: the same app and sample data as `docs/demo.html`, without the landing or the setup guide. Opened in a new tab by the landing's **Try the demo** button. Rebuilt with `npm run demo`. Served by GitHub Pages. |
-| `docs/memorabilia-showcase-video.mp4` | The one-minute walkthrough video, played inline on the demo page and linked from the README. |
+| `docs/demo.html` | The public demo page: a standalone landing page — the walkthrough video, the calls to action, the GitHub logo and repo name, and the setup guide. No app, no data. Rebuilt with `npm run demo`. Served by GitHub Pages. |
+| `docs/demo-app.html` | The bare demo: the app with the sample data (`tests/demo-data.js`: real player and team names, made-up certificate numbers), with the sample photos, logos and videos from `tests/sample-assets.json` inlined. Opened in a new tab by the landing's **Try the demo** button. Rebuilt with `npm run demo`. Served by GitHub Pages. |
+| `docs/memorabilia-showcase-video.mp4` | The one-minute walkthrough video, played inline on the demo page, with its music credit under it. |
 | `tests/sample-assets.json` | The sample photos, logos and videos the demo page shows, as base64 text (the same files the Drive sample folders hold, where you can get them as files): a photo per item, named by Item ID, the two videos named by hologram, the two team logos. |
 | `tools/process_logos.py` | Team logo processing script (256 × 256, transparent background). |
 | `tests/`, `package.json` | Tests and a preview with made-up data (see *Tests*). Not published. |

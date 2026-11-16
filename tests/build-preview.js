@@ -3,13 +3,13 @@
    data and the mock server, so it opens in a browser without Google. The preview covers the two collections:
    Autographed Memorabilia and Game Used Memorabilia.
    Usage: node tests/build-preview.js                                  (test data -> tests/out/preview.html)
-          node tests/build-preview.js --data demo-data.js --out docs/demo.html --demo   (demo data -> docs/demo.html)
-          node tests/build-preview.js --data demo-data.js --out docs/demo-app.html      (demo data -> docs/demo-app.html, bare)
-   The --demo build adds the landing (see landingCss/landingHero/landingSetup): the walkthrough video, the
-   two calls to action and the GitHub link at the top of the home view, and the setup guide (SETUP.md
-   rendered to HTML) at the bottom of the page. "Try the demo" opens the bare demo (docs/demo-app.html, the
-   same build without --demo) in a new tab. The preview is the bare app, so the UI tests see exactly
-   what a deployed copy shows. Don't edit docs/demo.html or docs/demo-app.html by hand — the next demo build overwrites them. */
+          node tests/build-preview.js --data demo-data.js --out docs/demo-app.html   (demo data -> docs/demo-app.html)
+          node tests/build-preview.js --landing --out docs/demo.html   (landing page -> docs/demo.html)
+   The landing (see landingCss/landingHero/landingSetup/landingPage) is a standalone page: the walkthrough
+   video, the two calls to action, the GitHub logo and repo name, and the setup guide (SETUP.md rendered
+   to HTML) — no app, no data. "Try the demo" opens the bare demo (docs/demo-app.html) in a new tab, so
+   the demo lives only there. The preview is the bare app, so the UI tests see exactly what a deployed
+   copy shows. Don't edit docs/demo.html or docs/demo-app.html by hand — the next demo build overwrites them. */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -87,17 +87,17 @@ function mdToHtml(md) {
   return html;
 }
 
-/* The landing, demo-only: the walkthrough video, the two calls to action and the GitHub link at the top
-   of the home view, and the setup guide at the bottom of the page. The landing lives inside the home
-   view (not above the app) so the router's scroll handling — scroll to the top of the screen on first
-   visit — still lands on the right screen, and the setup guide only shows while the home view is open.
-   "Create your collection" scrolls instead of changing the hash, so it never fights the router; "Try the
-   demo" is a link to the bare demo (demo-app.html) in a new tab. Class names are
-   prefixed demo- so none of the app's styles apply to them. */
+/* The landing, demo-only: the walkthrough video, the two calls to action and the GitHub logo and repo
+   name, and the setup guide. It is a standalone page (docs/demo.html) — no app, no data — so the demo
+   itself lives only in docs/demo-app.html, which "Try the demo" opens in a new tab. "Create your
+   collection" scrolls to the setup guide on the same page. Class names are prefixed demo- so none of
+   the app's styles apply to them. */
 function landingCss() {
   return '<style>\n' +
     '  .demo-landing { max-width: 960px; margin: 0 auto; padding: 40px 32px 8px; text-align: center; }\n' +
     '  .demo-landing video { display: block; width: 100%; border-radius: var(--r-lg); box-shadow: var(--lift-hi); background: #000; }\n' +
+    '  .demo-music { margin: 12px 0 0; font-size: var(--fs-sm); color: var(--muted); }\n' +
+    '  .demo-music a { color: var(--muted); }\n' +
     '  .demo-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }\n' +
     '  .demo-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--h-btn-lg); padding: 0 24px; border: 0; border-radius: var(--r-pill); cursor: pointer; font-weight: 600; font-size: var(--fs-md); color: var(--ink); text-decoration: none; background: var(--surface); box-shadow: var(--lift); }\n' +
     '  .demo-btn-primary { background: var(--accent); color: #fff; }\n' +
@@ -129,6 +129,7 @@ function landingCss() {
 function landingHero() {
   return '<div class="demo-landing">\n' +
     '  <video controls preload="metadata" src="memorabilia-showcase-video.mp4"></video>\n' +
+    '  <p class="demo-music">Music: "Energy" by Benjamin Tissot — <a href="https://www.bensound.com/royalty-free-music">bensound.com</a> — License code: WSPALH883O9NVCED</p>\n' +
     '  <div class="demo-cta">\n' +
     '    <a class="demo-btn demo-btn-primary" id="demo-cta-try" href="demo-app.html" target="_blank" rel="noopener">Try the demo</a>\n' +
     '    <button class="demo-btn" id="demo-cta-setup" type="button">Create your collection</button>\n' +
@@ -147,35 +148,55 @@ function landingSetup() {
     '</section>\n' +
     '<script>\n' +
     '(function () {\n' +
-    '  function go(id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }\n' +
     '  var setupBtn = document.getElementById("demo-cta-setup");\n' +
-    '  if (setupBtn) setupBtn.addEventListener("click", function () { go("demo-setup"); });\n' +
-    '  var hub = document.getElementById("view-hub");\n' +
-    '  var setupEl = document.getElementById("demo-setup");\n' +
-    '  function syncSetup() { if (hub && setupEl) setupEl.hidden = hub.hidden; }\n' +
-    '  if (hub && setupEl && window.MutationObserver) {\n' +
-    '    new MutationObserver(syncSetup).observe(hub, { attributes: true, attributeFilter: ["hidden"] });\n' +
-    '  }\n' +
-    '  syncSetup();\n' +
+    '  if (setupBtn) setupBtn.addEventListener("click", function () {\n' +
+    '    var el = document.getElementById("demo-setup");\n' +
+    '    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });\n' +
+    '  });\n' +
     '})();\n' +
     '</script>\n';
 }
 
+/* The standalone landing page (docs/demo.html). It defines the few CSS variables the landing uses (the
+   same values as Styles.html :root) so it looks the same without the app. */
+function landingPage() {
+  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+    '<title>Memorabilia Showcase</title>\n' +
+    '<style>\n' +
+    '  :root {\n' +
+    '    --bg: #EEF0F3; --surface: #FFFFFF; --ink: #14161B; --muted: #5C6574; --accent: #2B59FF;\n' +
+    '    --r-sm: 10px; --r-lg: 18px; --r-pill: 999px;\n' +
+    '    --lift: 0 1px 2px rgba(20, 22, 27, .04), 0 6px 18px rgba(20, 22, 27, .06);\n' +
+    '    --lift-hi: 0 2px 6px rgba(20, 22, 27, .06), 0 22px 44px rgba(20, 22, 27, .14);\n' +
+    '    --h-btn-lg: 48px;\n' +
+    '    --fs-sm: 13px; --fs-md: 17px; --fs-lg: 22px; --fs-2xl: 34px;\n' +
+    '    --font: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;\n' +
+    '  }\n' +
+    '  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }\n' +
+    '  *, *::before, *::after { box-sizing: border-box; }\n' +
+    '</style>\n' +
+    landingCss() +
+    '</head>\n<body>\n' +
+    landingHero() +
+    landingSetup() +
+    '</body>\n</html>\n';
+}
+
 function build(opts) {
   opts = opts || {};
-  const dataFile = opts.data || 'fixtures.js';
   const outFile = opts.out ? path.join(root, opts.out) : path.join(__dirname, 'out', 'preview.html');
-  const demo = !!opts.demo;
+  if (opts.landing) {
+    fs.mkdirSync(path.dirname(outFile), { recursive: true });
+    fs.writeFileSync(outFile, landingPage());
+    return outFile;
+  }
+  const dataFile = opts.data || 'fixtures.js';
   const index = fs.readFileSync(path.join(root, 'Index.html'), 'utf8');
   let page = index.replace(/<\?!= include\('([A-Za-z]+)'\) \?>/g, function (_, name) {
     return fs.readFileSync(path.join(root, name + '.html'), 'utf8');
   });
   if (/<\?/.test(page)) throw new Error('Index.html has a template tag the preview does not understand.');
-  if (demo) {
-    page = page.replace('</head>', landingCss() + '</head>');
-    page = page.replace('<section class="view" id="view-hub" hidden>', '<section class="view" id="view-hub" hidden>\n' + landingHero());
-    page = page.replace('</body>', landingSetup() + '</body>');
-  }
   // The data and the mock go in before the app's first script.
   const first = page.indexOf('<script>');
   if (first === -1) throw new Error('No <script> found in the page.');
@@ -193,7 +214,7 @@ if (require.main === module) {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--data') opts.data = args[++i];
     else if (args[i] === '--out') opts.out = args[++i];
-    else if (args[i] === '--demo') opts.demo = true;
+    else if (args[i] === '--landing') opts.landing = true;
   }
   console.log('Built: ' + build(opts));
 }

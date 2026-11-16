@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "preview": "node tests/build-preview.js",
-    "demo": "node tests/build-preview.js --data demo-data.js --out docs/demo.html --demo && node tests/build-preview.js --data demo-data.js --out docs/demo-app.html",
+    "demo": "node tests/build-preview.js --landing --out docs/demo.html && node tests/build-preview.js --data demo-data.js --out docs/demo-app.html",
     "shots": "SHOTS=1 playwright test --config tests/playwright.config.js tests/ui/shots.spec.js",
     "test": "npm run test:unit && npm run test:ui",
     "test:ui": "playwright test --config tests/playwright.config.js",
