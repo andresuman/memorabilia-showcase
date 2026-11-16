@@ -12,6 +12,9 @@
   }
   function photo(id) {
     if (/^data:/.test(id)) return id; // a photo saved from the page during the test
+    // The demo page inlines the real sample photos (build-preview.js): an item whose photo is its own
+    // ID gets the real file; anything else is still a drawn placeholder, as before.
+    if (window.__samplePhotos && window.__samplePhotos[id]) return window.__samplePhotos[id];
     const shape = SHAPES[String(id).split('-')[0]] || SHAPES.sq;
     const hue = String(id).split('').reduce(function (n, c) { return n + c.charCodeAt(0); }, 0) * 37 % 360;
     return svg(shape[0], shape[1], 'hsl(' + hue + ',55%,45%)', id);
@@ -43,17 +46,21 @@
       getCollection: function () { data(ok, 'TEST_COLLECTION', 120); },
       getGameUsed: function () { data(ok, 'TEST_GU', 180); },
       getTeams: function () { data(ok, 'TEST_TEAMS', 40); },
-      getLogos: function () { later(function () { ok(logos); }); },
+      getLogos: function () {
+        // The demo page inlines the real sample logos; the test teams keep their drawn ones.
+        later(function () { ok(Object.assign({}, logos, window.__sampleLogos || {})); });
+      },
       getPhoto: function (id, w) {
         (window.__photoCalls = window.__photoCalls || []).push([id, w]);
         later(function () { if (/^broken/.test(id)) ko(new Error('No such photo')); else ok(photo(id)); });
       },
-      // A video in pieces of 2 MB (base64). window.__videoB64 = a real video for the preview, else filler bytes.
+      // A video in pieces of 2 MB (base64). window.__videoB64 = a real video for the preview, else one of the
+      // inlined sample videos by hologram (the part of the ref before '~'), else filler bytes.
       getVideoChunk: function (ref, i) {
         (window.__videoCalls = window.__videoCalls || []).push([ref, i]);
         later(function () {
           if (window.__videoFail) { ko(new Error('Drive said no')); return; }
-          const real = window.__videoB64;
+          const real = window.__videoB64 || (window.__sampleVideos || {})[String(ref).split('~')[0]];
           ok(real ? (i === 0 ? real : '') : btoa('piece ' + i));
         }, 120);
       },

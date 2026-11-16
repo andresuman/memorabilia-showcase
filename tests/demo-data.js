@@ -2,8 +2,10 @@
    server sends (see tests/fixtures.js), but with REAL player and team names so collectors see a collection
    that reads like theirs. The games are real and verified (Ravens 41-17 vs Browns, Sep 14, 2025; Orioles
    vs Angels, Jun 14, 2025; Orioles vs Mets doubleheader game 2, Jul 10, 2025). The certificate numbers are
-   made up (AB123456 and the like) and the items are examples, not real items for sale. No real photos or
-   logos: the mock draws placeholders and the page shows sport icons where a logo would go.
+   made up (AB123456 and the like) and the items are examples, not real items for sale. The demo shows the real
+   sample photos, logos and videos from tests/sample-assets.json (the same files the Drive sample folders hold):
+   an item's photo is its own ID, a video's reference is the hologram of the ball it shows. Three items have no
+   photo on purpose (AM-0006, GU-0004, GU-0006), so the page shows what an item without a photo looks like.
    The test data stays in tests/fixtures.js with invented names, so the tests never depend on this file. */
 (function (root) {
   'use strict';
@@ -20,14 +22,14 @@
 
   root.TEST_COLLECTION = {
     items: [
-      item('AM-0001', 'Jersey', 'Custom', ['portrait-2'], [sig('Derrick Henry', 'Football', RAVENS, '2024-12-06', 'In Person', { at: 'Card Show' })], { detail: 'Purple' }),
-      item('AM-0002', 'Baseball', '', [], [sig('Jim Palmer', 'Baseball', ORIOLES, '2024-05-05', 'Purchased', {
+      item('AM-0001', 'Jersey', 'Custom', ['AM-0001'], [sig('Derrick Henry', 'Football', RAVENS, '2024-12-06', 'In Person', { at: 'Card Show' })], { detail: 'Purple' }),
+      item('AM-0002', 'Baseball', '', ['AM-0002'], [sig('Jim Palmer', 'Baseball', ORIOLES, '2024-05-05', 'Purchased', {
         at: 'eBay', inscription: 'HOF 90', autoAuth: 'JSA', autoCert: 'GH345678',
         notes: 'Signed in blue ink on the sweet spot.'
-      })], { price: 38.75, usage: 'Game Used', itemAuth: 'MLB', itemCert: 'CD000001', video: { ref: 'vid-1~0', size: 5000000, pieces: 3 } }),
-      item('AM-0003', 'Jersey', 'Custom', ['land-2'], [sig('Zay Flowers', 'Football', RAVENS, '2025-08-05', 'Gift', { giftedBy: 'John', instagram: 'https://www.instagram.com/p/example' })], { detail: 'White' }),
-      item('AM-0004', 'Bat', 'C243', ['sq-3'], [sig('Gunnar Henderson', 'Baseball', ORIOLES, '2024-08-10', 'In Person', { at: 'Card Show', notes: 'Game model bat.' })], { detail: 'Blonde' }),
-      item('AM-0005', 'Mini Helmet', 'Speed', ['portrait-3'], [sig('Roquan Smith', 'Football', RAVENS, '2025-03-15', 'In Person', { at: 'Card Show' })], { detail: 'Black' }),
+      })], { price: 38.75, usage: 'Game Used', itemAuth: 'MLB', itemCert: 'CD000001', video: { ref: 'CD000001~0', size: 29445, pieces: 1 } }),
+      item('AM-0003', 'Jersey', 'Custom', ['AM-0003'], [sig('Zay Flowers', 'Football', RAVENS, '2025-08-05', 'Gift', { giftedBy: 'John', instagram: 'https://www.instagram.com/p/example' })], { detail: 'White' }),
+      item('AM-0004', 'Bat', 'C243', ['AM-0004'], [sig('Gunnar Henderson', 'Baseball', ORIOLES, '2024-08-10', 'In Person', { at: 'Card Show', notes: 'Game model bat.' })], { detail: 'Blonde' }),
+      item('AM-0005', 'Mini Helmet', 'Speed', ['AM-0005'], [sig('Roquan Smith', 'Football', RAVENS, '2025-03-15', 'In Person', { at: 'Card Show' })], { detail: 'Black' }),
       item('AM-0006', 'Baseball', '', [], [sig('Tippy Martinez', 'Baseball', ORIOLES, '2024-06-15', 'TTM', { notes: 'TTM, received in 2 weeks.' })])
     ],
     missing: null,
@@ -43,19 +45,19 @@
     items: [
       gu('GU-0001', 'Baseball', { date: '2025-06-14', season: '2025', away: 'Los Angeles Angels', home: ORIOLES, score: '5 - 6', result: 'W', stadium: 'Oriole Park at Camden Yards',
         attended: true, inning: 'Top of 1st', atBat: 'Taylor Ward', pitching: 'Tomoyuki Sugano', play: 'Foul', auth: 'MLB', cert: 'AB123456', bought: '2025-06-14', at: 'Orioles Authentics', price: 35,
-        notes: 'Balls: 1, Strikes: 1',
-        video: { ref: 'vid-2~0', size: 1000, pieces: 1 }, order: 0 }),
+        notes: 'Balls: 1, Strikes: 1', photos: ['GU-0001'],
+        video: { ref: 'AB123456~0', size: 27811, pieces: 1 }, order: 0 }),
       gu('GU-0002', 'Baseball', { date: '2025-06-14', season: '2025', away: 'Los Angeles Angels', home: ORIOLES, score: '5 - 6', result: 'W', stadium: 'Oriole Park at Camden Yards',
         inning: 'Bottom of 1st', atBat: 'Gunnar Henderson', pitching: 'Tyler Anderson', play: 'Grounds out.',
-        auth: 'MLB', cert: 'CD000001', signed: ['AM-0002'], order: 1 }),
+        auth: 'MLB', cert: 'CD000001', signed: ['AM-0002'], photos: ['GU-0002'], order: 1 }),
       gu('GU-0003', 'Gloves', { sport: 'Football', team: RAVENS, player: 'Roquan Smith', date: '2025-09-14', season: '2025', away: 'Cleveland Browns', home: RAVENS, score: '17 - 41', result: 'W',
         stadium: 'M&T Bank Stadium', attended: true, auth: 'Metabilia', cert: 'MB000001', photoMatched: true, bought: '2025-10-19', at: 'Metabilia', price: 15.97,
-        photos: ['land-3'], order: 2 }),
+        photos: ['GU-0003'], order: 2 }),
       gu('GU-0004', 'Batting Helmet', { usage: 'Team Issued', player: 'Ryan Mountcastle', auth: 'MLB', cert: 'JD000001', bought: '2021-08-29', at: 'Orioles Authentics', order: 3 }),
       gu('GU-0006', 'Pants', { usage: 'Team Issued', sport: 'Football', team: RAVENS, detail: 'White', season: '2023', notes: 'Size 36.', order: 5 }),
       gu('GU-0005', 'Baseball', { date: '2025-07-10', season: '2025', away: 'New York Mets', home: ORIOLES, score: '3 - 7', result: 'W', stadium: 'Oriole Park at Camden Yards',
         inning: 'Bottom of 1st', atBat: 'Jordan Westburg', pitching: 'Brandon Waddell', play: 'Grounds out.',
-        auth: 'MLB', cert: 'EF000002', notes: 'Doubleheader, game 2.', order: 4 })
+        auth: 'MLB', cert: 'EF000002', notes: 'Doubleheader, game 2.', photos: ['GU-0005'], order: 4 })
     ],
     checks: { orphans: [], copies: [], dupes: [], videos: [], badIds: [] },
     missing: null,

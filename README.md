@@ -2,7 +2,7 @@
 
 Showcase and manage your autographed and game-used sports memorabilia — a web app backed by a Google Sheet. No coding needed to use it: your collection lives in a spreadsheet and in Drive folders, and the app shows it as a website.
 
-**[Try the demo](https://andresuman.github.io/memorabilia-showcase/demo.html)** — a small sample collection you can click through, no account needed. It uses real player and team names so it reads like a real collection; the certificate numbers are made up and the items are examples, not real items. (It goes live when this repo goes public; until then, run `npm run preview` and open `tests/out/preview.html`.)
+**[Try the demo](https://andresuman.github.io/memorabilia-showcase/demo.html)** — a small sample collection you can click through, no account needed. It uses real player and team names so it reads like a real collection, and it shows the real sample photos, team logos and videos of the play; the certificate numbers are made up and the items are examples, not real items. Three sample items have no photo on purpose, so you can see what an item without a photo looks like.
 
 Two collections, linked to each other:
 
