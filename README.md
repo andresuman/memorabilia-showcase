@@ -6,7 +6,7 @@ Showcase and manage your autographed and game-used sports memorabilia — a web 
 
 ## Watch it in action
 
-![Memorabilia Showcase walkthrough](docs/memorabilia-showcase-video.mp4)
+[▶ Watch the one-minute walkthrough](https://andresuman.github.io/memorabilia-showcase/memorabilia-showcase-video.mp4)
 
 A one-minute walkthrough of a real collection: the autographed and game-used collections, how they link, and how it all runs on Google Sheets and Drive.
 
