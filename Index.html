@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memorabilia Showcase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+<?!= include('Styles') ?>
+</head>
+<body>
+  <!-- Home: one card per collection -->
+  <section class="view" id="view-hub" hidden>
+    <header class="wrap hero hub-hero">
+      <div class="hero-top">
+        <div>
+          <h1>Memorabilia Showcase</h1>
+          <p>Autographed and game-used sports memorabilia, in one place.</p>
+        </div>
+        <div class="actions">
+          <button class="icon-btn" id="hub-reload" title="Reload from the spreadsheet" aria-label="Reload from the spreadsheet">
+            <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M240,56v48a8,8,0,0,1-8,8H184a8,8,0,0,1,0-16H211.4L184.81,71.64l-.25-.24a80,80,0,1,0-1.67,114.78,8,8,0,0,1,11,11.63A95.44,95.44,0,0,1,128,224h-1.32A96,96,0,1,1,195.75,60L224,85.8V56a8,8,0,1,1,16,0Z"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+    <main class="wrap hub-grid" id="hub"></main>
+  </section>
+
+  <!-- Autographed Memorabilia -->
+  <section class="view" id="view-am" hidden>
+  <header class="wrap hero">
+    <a class="back" href="#" data-go="">Memorabilia Showcase</a>
+    <div class="hero-top">
+      <div>
+        <h1>Autographed Memorabilia</h1>
+        <p id="summary"><span class="sr">Loading</span><i class="skel-line" aria-hidden="true"></i></p>
+      </div>
+      <div class="actions">
+        <button class="icon-btn" id="reload" title="Reload from the spreadsheet" aria-label="Reload from the spreadsheet">
+          <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M240,56v48a8,8,0,0,1-8,8H184a8,8,0,0,1,0-16H211.4L184.81,71.64l-.25-.24a80,80,0,1,0-1.67,114.78,8,8,0,0,1,11,11.63A95.44,95.44,0,0,1,128,224h-1.32A96,96,0,1,1,195.75,60L224,85.8V56a8,8,0,1,1,16,0Z"/></svg>
+        </button>
+        <button class="icon-btn menu-btn" id="menu-btn" title="Data and photos" aria-label="Data and photos" aria-haspopup="true" aria-expanded="false" aria-controls="menu">
+          <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm109.94-52.79a8,8,0,0,0-3.89-5.4l-29.83-17-.12-33.62a8,8,0,0,0-2.83-6.08,111.91,111.91,0,0,0-36.72-20.67,8,8,0,0,0-6.46.59L128,41.85,97.88,25a8,8,0,0,0-6.47-.6A112.1,112.1,0,0,0,54.73,45.15a8,8,0,0,0-2.83,6.07l-.15,33.65-29.83,17a8,8,0,0,0-3.89,5.4,106.47,106.47,0,0,0,0,41.56,8,8,0,0,0,3.89,5.4l29.83,17,.12,33.62a8,8,0,0,0,2.83,6.08,111.91,111.91,0,0,0,36.72,20.67,8,8,0,0,0,6.46-.59L128,214.15,158.12,231a7.91,7.91,0,0,0,3.9,1,8.09,8.09,0,0,0,2.57-.42,112.1,112.1,0,0,0,36.68-20.73,8,8,0,0,0,2.83-6.07l.15-33.65,29.83-17a8,8,0,0,0,3.89-5.4A106.47,106.47,0,0,0,237.94,107.21Zm-15,34.91-28.57,16.25a8,8,0,0,0-3,3c-.58,1-1.19,2.06-1.81,3.06a7.94,7.94,0,0,0-1.22,4.21l-.15,32.25a95.89,95.89,0,0,1-25.37,14.3L134,199.13a8,8,0,0,0-3.91-1h-.19c-1.21,0-2.43,0-3.64,0a8.08,8.08,0,0,0-4.1,1l-28.84,16.1A96,96,0,0,1,67.88,201l-.11-32.2a8,8,0,0,0-1.22-4.22c-.62-1-1.23-2-1.8-3.06a8.09,8.09,0,0,0-3-3.06l-28.6-16.29a90.49,90.49,0,0,1,0-28.26L61.67,97.63a8,8,0,0,0,3-3c.58-1,1.19-2.06,1.81-3.06a7.94,7.94,0,0,0,1.22-4.21l.15-32.25a95.89,95.89,0,0,1,25.37-14.3L122,56.87a8,8,0,0,0,4.1,1c1.21,0,2.43,0,3.64,0a8.08,8.08,0,0,0,4.1-1l28.84-16.1A96,96,0,0,1,188.12,55l.11,32.2a8,8,0,0,0,1.22,4.22c.62,1,1.23,2,1.8,3.06a8.09,8.09,0,0,0,3,3.06l28.6,16.29A90.49,90.49,0,0,1,222.9,142.12Z"/></svg>
+        </button>
+        <nav class="menu" id="menu" aria-label="Data and photos">
+          <div class="menu-warn checks" id="am-checks" hidden></div>
+          <a id="lnk-sheet" href="#" target="_blank" rel="noopener" aria-disabled="true" style="--c:#0F9D58">
+            <span class="ic"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM40,112H80v32H40Zm56,0H216v32H96ZM216,64V96H40V64ZM40,160H80v32H40Zm176,32H96V160H216v32Z"/></svg></span>
+            <span><b>Autographed tab</b><small>Items and signatures</small></span>
+          </a>
+          <a id="lnk-photos" href="#" target="_blank" rel="noopener" aria-disabled="true" style="--c:#2B59FF">
+            <span class="ic"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,16V158.75l-26.07-26.06a16,16,0,0,0-22.63,0l-20,20-44-44a16,16,0,0,0-22.62,0L40,149.37V56ZM40,172l52-52,80,80H40Zm176,28H194.63l-36-36,20-20L216,181.38V200ZM144,100a12,12,0,1,1,12,12A12,12,0,0,1,144,100Z"/></svg></span>
+            <span><b>Photos folder</b><small>Named by Item ID, like <span class="nowrap">AM-0015.jpg</span></small></span>
+          </a>
+          <a id="lnk-logos" href="#" target="_blank" rel="noopener" aria-disabled="true" style="--c:#E2560B">
+            <span class="ic"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208,40H48A16,16,0,0,0,32,56v56c0,52.72,25.52,84.67,46.93,102.19,23.06,18.86,46,25.27,47,25.53a8,8,0,0,0,4.2,0c1-.26,23.91-6.67,47-25.53C198.48,196.67,224,164.72,224,112V56A16,16,0,0,0,208,40Zm0,72c0,37.07-13.66,67.16-40.6,89.42A129.3,129.3,0,0,1,128,223.62a128.25,128.25,0,0,1-38.92-21.81C61.82,179.51,48,149.3,48,112l0-56,160,0Z"/></svg></span>
+            <span><b>Team logos folder</b><small>Named by team, like <span class="nowrap">Chicago Cubs.png</span></small></span>
+          </a>
+        </nav>
+      </div>
+    </div>
+    <div class="provenance" id="provenance" role="group" aria-label="How the signatures were obtained" hidden></div>
+  </header>
+
+  <nav class="toolbar" id="toolbar" aria-label="Filters">
+    <div class="wrap bar1">
+      <label class="search">
+        <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></svg>
+        <input id="q" type="search" placeholder="Search autographs" aria-label="Search autographs">
+      </label>
+      <button class="filters-btn" id="filters-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="more">
+        <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M40,88H73a32,32,0,0,0,62,0h81a8,8,0,0,0,0-16H135a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16Zm64-24A16,16,0,1,1,88,80,16,16,0,0,1,104,64ZM216,168H199a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16h97a32,32,0,0,0,62,0h17a8,8,0,0,0,0-16Zm-48,24a16,16,0,1,1,16-16A16,16,0,0,1,168,192Z"/></svg>
+        <span>Filters</span><span class="n" id="filters-n" hidden></span>
+      </button>
+      <!-- Behind the Filters button: a panel under it on a computer, a bottom sheet on a phone. -->
+      <div class="more" id="more" role="dialog" aria-label="Filters">
+        <div class="more-head"><span class="grab" aria-hidden="true"></span><b>Filters</b><button class="more-reset" id="more-reset">Reset</button><button class="more-done" id="more-done">Done</button></div>
+        <label class="field"><span class="lab">Sport</span><select class="select" id="f-sport" aria-label="Sport"></select></label>
+        <label class="field"><span class="lab">Item type</span><select class="select" id="f-type" aria-label="Item type"></select></label>
+        <label class="field"><span class="lab">Usage</span><select class="select" id="f-usage" aria-label="Usage"></select></label>
+        <div class="field toggles"><span class="lab">Show only</span><div class="tg">
+          <button class="toggle" id="f-ins" aria-pressed="false">Inscribed</button>
+          <button class="toggle" id="f-cert" aria-pressed="false" title="Autograph or item certified">Certified</button>
+        </div></div>
+        <label class="field"><span class="lab">Sort</span><select class="select" id="sort" aria-label="Sort">
+          <option value="new">Newest first</option>
+          <option value="old">Oldest first</option>
+          <option value="az">Signer A to Z</option>
+          <option value="most">Most signatures</option>
+        </select></label>
+      </div>
+    </div>
+    <div class="wrap teams-row" id="teams" role="group" aria-label="Teams"></div>
+  </nav>
+
+  <main class="wrap" id="am-main">
+    <div class="status"><span id="count" aria-live="polite"></span><button class="clear" id="clear" hidden>Clear filters</button></div>
+    <div class="grid" id="grid"></div>
+  </main>
+  </section>
+
+  <!-- Game Used Memorabilia: one card per object used in a game (signed or not) -->
+  <section class="view" id="view-gu" hidden>
+    <header class="wrap hero">
+      <a class="back" href="#" data-go="">Memorabilia Showcase</a>
+      <div class="hero-top">
+        <div>
+          <h1>Game Used Memorabilia</h1>
+          <p id="gu-summary"><span class="sr">Loading</span><i class="skel-line" aria-hidden="true"></i></p>
+        </div>
+        <div class="actions">
+          <button class="icon-btn" id="gu-reload" title="Reload from the spreadsheet" aria-label="Reload from the spreadsheet">
+            <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M240,56v48a8,8,0,0,1-8,8H184a8,8,0,0,1,0-16H211.4L184.81,71.64l-.25-.24a80,80,0,1,0-1.67,114.78,8,8,0,0,1,11,11.63A95.44,95.44,0,0,1,128,224h-1.32A96,96,0,1,1,195.75,60L224,85.8V56a8,8,0,1,1,16,0Z"/></svg>
+          </button>
+          <button class="icon-btn menu-btn" id="gu-menu-btn" title="Data and photos" aria-label="Data and photos" aria-haspopup="true" aria-expanded="false" aria-controls="gu-menu">
+            <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm109.94-52.79a8,8,0,0,0-3.89-5.4l-29.83-17-.12-33.62a8,8,0,0,0-2.83-6.08,111.91,111.91,0,0,0-36.72-20.67,8,8,0,0,0-6.46.59L128,41.85,97.88,25a8,8,0,0,0-6.47-.6A112.1,112.1,0,0,0,54.73,45.15a8,8,0,0,0-2.83,6.07l-.15,33.65-29.83,17a8,8,0,0,0-3.89,5.4,106.47,106.47,0,0,0,0,41.56,8,8,0,0,0,3.89,5.4l29.83,17,.12,33.62a8,8,0,0,0,2.83,6.08,111.91,111.91,0,0,0,36.72,20.67,8,8,0,0,0,6.46-.59L128,214.15,158.12,231a7.91,7.91,0,0,0,3.9,1,8.09,8.09,0,0,0,2.57-.42,112.1,112.1,0,0,0,36.68-20.73,8,8,0,0,0,2.83-6.07l.15-33.65,29.83-17a8,8,0,0,0,3.89-5.4A106.47,106.47,0,0,0,237.94,107.21Zm-15,34.91-28.57,16.25a8,8,0,0,0-3,3c-.58,1-1.19,2.06-1.81,3.06a7.94,7.94,0,0,0-1.22,4.21l-.15,32.25a95.89,95.89,0,0,1-25.37,14.3L134,199.13a8,8,0,0,0-3.91-1h-.19c-1.21,0-2.43,0-3.64,0a8.08,8.08,0,0,0-4.1,1l-28.84,16.1A96,96,0,0,1,67.88,201l-.11-32.2a8,8,0,0,0-1.22-4.22c-.62-1-1.23-2-1.8-3.06a8.09,8.09,0,0,0-3-3.06l-28.6-16.29a90.49,90.49,0,0,1,0-28.26L61.67,97.63a8,8,0,0,0,3-3c.58-1,1.19-2.06,1.81-3.06a7.94,7.94,0,0,0,1.22-4.21l.15-32.25a95.89,95.89,0,0,1,25.37-14.3L122,56.87a8,8,0,0,0,4.1,1c1.21,0,2.43,0,3.64,0a8.08,8.08,0,0,0,4.1-1l28.84-16.1A96,96,0,0,1,188.12,55l.11,32.2a8,8,0,0,0,1.22,4.22c.62,1,1.23,2,1.8,3.06a8.09,8.09,0,0,0,3,3.06l28.6,16.29A90.49,90.49,0,0,1,222.9,142.12Z"/></svg>
+          </button>
+          <nav class="menu" id="gu-menu" aria-label="Data and photos">
+            <div class="menu-warn checks" id="gu-checks" hidden></div>
+            <a id="gu-lnk-sheet" href="#" target="_blank" rel="noopener" aria-disabled="true" style="--c:#0F9D58">
+              <span class="ic"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM40,112H80v32H40Zm56,0H216v32H96ZM216,64V96H40V64ZM40,160H80v32H40Zm176,32H96V160H216v32Z"/></svg></span>
+              <span><b>Game Used tab</b><small>Items, games and certificates</small></span>
+            </a>
+            <a id="gu-lnk-photos" href="#" target="_blank" rel="noopener" aria-disabled="true" style="--c:#2B59FF">
+              <span class="ic"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,16V158.75l-26.07-26.06a16,16,0,0,0-22.63,0l-20,20-44-44a16,16,0,0,0-22.62,0L40,149.37V56ZM40,172l52-52,80,80H40Zm176,28H194.63l-36-36,20-20L216,181.38V200ZM144,100a12,12,0,1,1,12,12A12,12,0,0,1,144,100Z"/></svg></span>
+              <span><b>Game Used folder</b><small>Photos by Item ID, videos by hologram</small></span>
+            </a>
+          </nav>
+        </div>
+      </div>
+      <div class="provenance" id="gu-progress" hidden></div>
+    </header>
+    <nav class="toolbar" id="gu-toolbar" aria-label="Filters">
+      <div class="wrap bar1">
+        <label class="search">
+          <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></svg>
+          <input id="gu-q" type="search" placeholder="Search game used" aria-label="Search game used">
+        </label>
+        <button class="filters-btn" id="gu-filters-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="gu-more">
+          <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M40,88H73a32,32,0,0,0,62,0h81a8,8,0,0,0,0-16H135a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16Zm64-24A16,16,0,1,1,88,80,16,16,0,0,1,104,64ZM216,168H199a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16h97a32,32,0,0,0,62,0h17a8,8,0,0,0,0-16Zm-48,24a16,16,0,1,1,16-16A16,16,0,0,1,168,192Z"/></svg>
+          <span>Filters</span><span class="n" id="gu-filters-n" hidden></span>
+        </button>
+        <!-- As in Autographed Memorabilia: a panel under the button on a computer, a bottom sheet on a phone. -->
+        <div class="more" id="gu-more" role="dialog" aria-label="Filters">
+          <div class="more-head"><span class="grab" aria-hidden="true"></span><b>Filters</b><button class="more-reset" id="gu-more-reset">Reset</button><button class="more-done" id="gu-more-done">Done</button></div>
+          <label class="field"><span class="lab">Sport</span><select class="select" id="gu-f-sport" aria-label="Sport"></select></label>
+          <label class="field"><span class="lab">Item type</span><select class="select" id="gu-f-type" aria-label="Item type"></select></label>
+          <label class="field"><span class="lab">Usage</span><select class="select" id="gu-f-usage" aria-label="Usage"></select></label>
+          <label class="field"><span class="lab">Season</span><select class="select" id="gu-f-season" aria-label="Season"></select></label>
+          <label class="field"><span class="lab">Result</span><select class="select" id="gu-f-result" aria-label="Result"></select></label>
+          <div class="field toggles"><span class="lab">Show only</span><div class="tg">
+            <!-- What proves the item first (as in its usage tag), then what is his (the ticket, as in the result tag). -->
+            <button class="toggle" id="gu-f-video" aria-pressed="false" title="With the video of the play">Video</button>
+            <button class="toggle" id="gu-f-matched" aria-pressed="false">Photo matched</button>
+            <button class="toggle" id="gu-f-attended" aria-pressed="false">I was there</button>
+          </div></div>
+          <label class="field"><span class="lab">Sort</span><select class="select" id="gu-sort" aria-label="Sort">
+            <option value="new">Newest first</option>
+            <option value="old">Oldest first</option>
+          </select></label>
+        </div>
+      </div>
+      <div class="wrap teams-row" id="gu-chips" role="group" aria-label="Teams"></div>
+    </nav>
+    <main class="wrap" id="gu-main">
+      <div class="status"><span id="gu-count" aria-live="polite"></span><button class="clear" id="gu-clear" hidden>Clear filters</button></div>
+      <div id="gu-grid"></div>
+    </main>
+  </section>
+
+  <!-- Back to the top of the page, after scrolling about two screens down the list (Phosphor arrow-up, regular). -->
+  <button class="round to-top" id="to-top" aria-label="Back to the top" title="Back to the top" tabindex="-1">
+    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M205.66,117.66a8,8,0,0,1-11.32,0L136,59.31V216a8,8,0,0,1-16,0V59.31L61.66,117.66a8,8,0,0,1-11.32-11.32l72-72a8,8,0,0,1,11.32,0l72,72A8,8,0,0,1,205.66,117.66Z"/></svg>
+  </button>
+  <div class="more-scrim" id="more-scrim" hidden></div>
+  <input type="file" id="picker" accept="image/*" hidden>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="scrim" id="scrim" hidden>
+    <article class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="d-title"></article>
+  </div>
+
+<!-- The scripts share one page scope; this order matters (JsApp starts the app, so it goes last). -->
+<?!= include('JsCore') ?>
+<?!= include('JsPanel') ?>
+<?!= include('JsAutographed') ?>
+<?!= include('JsHome') ?>
+<?!= include('JsGameUsed') ?>
+<?!= include('JsCrop') ?>
+<?!= include('JsApp') ?>
+</body>
+</html>

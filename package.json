@@ -1,0 +1,16 @@
+{
+  "name": "memorabilia-showcase",
+  "private": false,
+  "description": "Tests and preview for Memorabilia Showcase (the app itself is Code.gs and the .html files, deployed with clasp).",
+  "license": "MIT",
+  "scripts": {
+    "preview": "node tests/build-preview.js",
+    "shots": "SHOTS=1 playwright test --config tests/playwright.config.js tests/ui/shots.spec.js",
+    "test": "npm run test:unit && npm run test:ui",
+    "test:ui": "playwright test --config tests/playwright.config.js",
+    "test:unit": "node --test tests/unit/*.test.js"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

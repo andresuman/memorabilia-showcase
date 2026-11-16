@@ -1,0 +1,53 @@
+<script>
+  'use strict';
+
+  /* JsHome.html: the home screen, one card per collection: Autographed Memorabilia, Game Used. */
+
+  /* ---------- Home: one card per collection ---------- */
+  // A collection's big icon, aligned by what it draws and not by its 256-px box: each Phosphor icon leaves a
+  // different margin inside that box, so the same CSS made the signature touch the edge and cut the trophy.
+  // Cropped to its drawing (measured once, off screen) and kept to the right of its area, every icon sits the
+  // same distance from the card's edge, at the same visual size.
+  const hubIcons = {};
+  function hubIcon(svg) {
+    if (hubIcons[svg]) return hubIcons[svg];
+    let out = svg;
+    try {
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:absolute;left:-9999px;top:0;width:256px;height:256px;visibility:hidden';
+      probe.innerHTML = svg;
+      document.body.appendChild(probe);
+      const el = probe.firstElementChild;
+      el.setAttribute('width', '256'); el.setAttribute('height', '256');
+      const b = el.getBBox();
+      probe.remove();
+      if (b.width && b.height) {
+        out = svg.replace('viewBox="0 0 256 256"', 'viewBox="' + [b.x, b.y, b.width, b.height].map(function (v) { return +v.toFixed(1); }).join(' ') +
+          '" preserveAspectRatio="xMaxYMid meet"');
+      }
+    } catch (e) { /* the icon as it comes */ }
+    return (hubIcons[svg] = out);
+  }
+  function renderHub() {
+    const items = state.items, loaded = items.length > 0;
+    const sigs = loaded ? allSigs() : [];
+    const people = loaded ? unique(sigs.map(function (s) { return s.signer; })).length : 0;
+    $('#hub').innerHTML =
+      '<a class="hub-card' + (loaded ? '' : ' loading') + '" href="#autographed" data-go="autographed">' +
+        '<div class="hub-art" style="--art:linear-gradient(135deg,#E2560B 0%,#B0213A 38%,' + THEME + ' 100%)">' + hubIcon(ICON_SIGNATURE) +
+          '<span class="big">' + (loaded ? items.length : HOLD_NUM) + '<small>items</small></span></div>' +
+        '<div class="hub-body"><h2>Autographed Memorabilia</h2><p>' +
+          (loaded ? sigs.length + ' signatures from ' + people + ' people' : HOLD_TEXT) + '</p></div></a>' +
+      guCard();
+  }
+  function guCard() {
+    const st = guStats();
+    return '<a class="hub-card' + (state.gu ? '' : ' loading') + '" href="#game-used" data-go="game-used">' +
+      '<div class="hub-art" style="--art:linear-gradient(135deg,#C8962E 0%,#E2560B 40%,' + THEME + ' 100%)">' + hubIcon(GU_TROPHY) +
+        '<span class="big">' + (state.gu ? st.total : HOLD_NUM) + '<small>items</small></span></div>' +
+      '<div class="hub-body"><h2>Game Used Memorabilia</h2><p>' +
+        (state.gu ? st.signed + ' signed, ' + st.unsigned + ' unsigned' : HOLD_TEXT) +
+      '</p></div></a>';
+  }
+  $('#hub-reload').addEventListener('click', reloadAll);
+</script>

@@ -1,0 +1,650 @@
+<script>
+  'use strict';
+
+  /* JsCore.html: team colors, state, helpers, photos and loading. Loaded first (Index.html). */
+
+
+  /* Team colors come from the Teams tab (getTeams, loadTeams below), keyed by team and by former name. Until they
+     arrive, and for a team with no color there, NEUTRAL. THEME is the app's own color, not data. */
+  const TEAMS = {};
+  const TEAM_NOW = {}; // a team's name, current or former, to its name today (the Teams tab)
+  const NEUTRAL = '#5B6472';
+  const THEME = '#2E1F8A';
+  const HOW_ORDER = ['In Person', 'Gift', 'TTM', 'Purchased'];
+  const HOW_LABEL = { 'In Person': 'In person', 'Gift': 'Gift', 'TTM': 'Through the mail', 'Purchased': 'Purchased' };
+  const HOW_COLOR = { 'In Person': 'var(--in-person)', 'Gift': 'var(--gift)', 'TTM': 'var(--ttm)', 'Purchased': 'var(--purchased)' };
+  const CAMERA = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.71,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.66-3.56L100.28,48h55.43l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"/></svg>';
+  // All icons come from Phosphor Icons (https://phosphoricons.com), MIT License, Copyright (c) 2023 Phosphor Icons.
+  // Big card icons use the light weight; the small interface icons (buttons, menus, badges) use regular.
+  // Collection icons, light weight:
+  // signature.
+  const ICON_SIGNATURE = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M232,170H60.6c3.34-6.54,6.73-13.35,10.06-20.29a26.64,26.64,0,0,0,4.3.35c14.23,0,31.09-11.12,50.33-33.22,1,3,2.2,6.25,3.68,9.56,6.89,15.45,15.68,23.39,26.14,23.6h.39c8.81,0,17.71-5.77,27-17.58C188.33,140.68,201.62,150,232,150a6,6,0,0,0,0-12c-39.69,0-41.88-16.61-42-18.06a5.83,5.83,0,0,0-4.15-5.8,6.09,6.09,0,0,0-6.88,2.59C166.81,135.4,158.9,138.06,155.34,138c-10.78-.21-19.11-23.68-21.46-35a6,6,0,0,0-10.57-2.53C104.64,123.86,88,137,76.18,137.92,100,85.84,107.23,52.7,98.23,36.78,95.44,31.86,89.66,26,77.91,26c-15,0-27,14.62-32.82,40.1C38.28,95.94,42.12,132,59.62,145c-4.15,8.64-8.4,17.08-12.52,25H24a6,6,0,0,0,0,12H40.76C28.65,204.58,19,220.66,18.86,220.91a6,6,0,1,0,10.28,6.18c.16-.26,11.56-19.27,25.21-45.09H232a6,6,0,0,0,0-12ZM56.79,68.77C61.05,50.08,69.34,38,77.91,38c6.4,0,8.64,2.51,9.87,4.69,4,7,6,28.15-22.88,91C54.59,123.39,50.73,95.3,56.79,68.77Z"/></svg>';
+  // The seal of a certificate (regular): seal-check.
+  const ICON_CERT = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M225.86,102.82c-3.77-3.94-7.67-8-9.14-11.57-1.36-3.27-1.44-8.69-1.52-13.94-.15-9.76-.31-20.82-8-28.51s-18.75-7.85-28.51-8c-5.25-.08-10.67-.16-13.94-1.52-3.56-1.47-7.63-5.37-11.57-9.14C146.28,23.51,138.44,16,128,16s-18.27,7.51-25.18,14.14c-3.94,3.77-8,7.67-11.57,9.14C88,40.64,82.56,40.72,77.31,40.8c-9.76.15-20.82.31-28.51,8S41,67.55,40.8,77.31c-.08,5.25-.16,10.67-1.52,13.94-1.47,3.56-5.37,7.63-9.14,11.57C23.51,109.72,16,117.56,16,128s7.51,18.27,14.14,25.18c3.77,3.94,7.67,8,9.14,11.57,1.36,3.27,1.44,8.69,1.52,13.94.15,9.76.31,20.82,8,28.51s18.75,7.85,28.51,8c5.25.08,10.67.16,13.94,1.52,3.56,1.47,7.63,5.37,11.57,9.14C109.72,232.49,117.56,240,128,240s18.27-7.51,25.18-14.14c3.94-3.77,8-7.67,11.57-9.14,3.27-1.36,8.69-1.44,13.94-1.52,9.76-.15,20.82-.31,28.51-8s7.85-18.75,8-28.51c.08-5.25.16-10.67,1.52-13.94,1.47-3.56,5.37-7.63,9.14-11.57C232.49,146.28,240,138.44,240,128S232.49,109.73,225.86,102.82Zm-11.55,39.29c-4.79,5-9.75,10.17-12.38,16.52-2.52,6.1-2.63,13.07-2.73,19.82-.1,7-.21,14.33-3.32,17.43s-10.39,3.22-17.43,3.32c-6.75.1-13.72.21-19.82,2.73-6.35,2.63-11.52,7.59-16.52,12.38S132,224,128,224s-9.15-4.92-14.11-9.69-10.17-9.75-16.52-12.38c-6.1-2.52-13.07-2.63-19.82-2.73-7-.1-14.33-.21-17.43-3.32s-3.22-10.39-3.32-17.43c-.1-6.75-.21-13.72-2.73-19.82-2.63-6.35-7.59-11.52-12.38-16.52S32,132,32,128s4.92-9.15,9.69-14.11,9.75-10.17,12.38-16.52c2.52-6.1,2.63-13.07,2.73-19.82.1-7,.21-14.33,3.32-17.43S70.51,56.9,77.55,56.8c6.75-.1,13.72-.21,19.82-2.73,6.35-2.63,11.52-7.59,16.52-12.38S124,32,128,32s9.15,4.92,14.11,9.69,10.17,9.75,16.52,12.38c6.1,2.52,13.07,2.63,19.82,2.73,7,.1,14.33.21,17.43,3.32s3.22,10.39,3.32,17.43c.1,6.75.21,13.72,2.73,19.82,2.63,6.35,7.59,11.52,12.38,16.52S224,124,224,128,219.08,137.15,214.31,142.11ZM173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34Z"/></svg>';
+  // Signature card facts (regular): instagram-logo, map-pin, gift; the certificate uses the seal above.
+  // The date of a game in the scoreboard (Phosphor calendar-blank, regular), so every fact of its line has its icon.
+  const ICON_DATE = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"/></svg>';
+  // The purchase after the bag: "Dec 2, 2024 for $371.00", the date alone, or the price alone ("$254.99", not
+  // "for $254.99", when the tab has no date).
+  function boughtWhen(date, price) {
+    const d = date ? fmtDate(date) : '', p = price != null ? money(price) : '';
+    return d && p ? d + ' for ' + p : d || p;
+  }
+  const ICON_INSTAGRAM = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160ZM176,24H80A56.06,56.06,0,0,0,24,80v96a56.06,56.06,0,0,0,56,56h96a56.06,56.06,0,0,0,56-56V80A56.06,56.06,0,0,0,176,24Zm40,152a40,40,0,0,1-40,40H80a40,40,0,0,1-40-40V80A40,40,0,0,1,80,40h96a40,40,0,0,1,40,40ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z"/></svg>';
+  const ICON_PLACE = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Zm0-112a88.1,88.1,0,0,0-88,88c0,31.4,14.51,64.68,42,96.25a254.19,254.19,0,0,0,41.45,38.3,8,8,0,0,0,9.18,0A254.19,254.19,0,0,0,174,200.25c27.45-31.57,42-64.85,42-96.25A88.1,88.1,0,0,0,128,16Zm0,206c-16.53-13-72-60.75-72-118a72,72,0,0,1,144,0C200,161.23,144.53,209,128,222Z"/></svg>';
+  const ICON_GIFT = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216,72H180.92c.39-.33.79-.65,1.17-1A29.53,29.53,0,0,0,192,49.57,32.62,32.62,0,0,0,158.44,16,29.53,29.53,0,0,0,137,25.91a54.94,54.94,0,0,0-9,14.48,54.94,54.94,0,0,0-9-14.48A29.53,29.53,0,0,0,97.56,16,32.62,32.62,0,0,0,64,49.57,29.53,29.53,0,0,0,73.91,71c.38.33.78.65,1.17,1H40A16,16,0,0,0,24,88v32a16,16,0,0,0,16,16v64a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V136a16,16,0,0,0,16-16V88A16,16,0,0,0,216,72ZM149,36.51a13.69,13.69,0,0,1,10-4.5h.49A16.62,16.62,0,0,1,176,49.08a13.69,13.69,0,0,1-4.5,10c-9.49,8.4-25.24,11.36-35,12.4C137.7,60.89,141,45.5,149,36.51Zm-64.09.36A16.63,16.63,0,0,1,96.59,32h.49a13.69,13.69,0,0,1,10,4.5c8.39,9.48,11.35,25.2,12.39,34.92-9.72-1-25.44-4-34.92-12.39a13.69,13.69,0,0,1-4.5-10A16.6,16.6,0,0,1,84.87,36.87ZM40,88h80v32H40Zm16,48h64v64H56Zm144,64H136V136h64Zm16-80H136V88h80v32Z"/></svg>';
+  // A fact with a gray icon instead of a word ("Certified by", "Gift from", "Obtained at"): the word stays for
+  // screen readers. value is HTML; rest follows it (the price after a place).
+  function factHtml(icon, label, value, rest) {
+    return '<span class="icon-fact">' + icon + '<span><span class="sr">' + label + ' </span><b>' + value + '</b>' + (rest || '') + '</span></span>';
+  }
+  // Where something was obtained or bought: a pin and the place as written in the spreadsheet (no at / on / in to
+  // guess, so a new site or shop needs no change here).
+  // How an item came (Phosphor shopping-bag, regular): nearly everything was bought; the few that were not (a gift,
+  // a ball caught) say so in their note, right above. Next to the pin of where it came from.
+  const ICON_BUY = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM176,88a48,48,0,0,1-96,0,8,8,0,0,1,16,0,32,32,0,0,0,64,0,8,8,0,0,1,16,0Z"/></svg>';
+  function placeHtml(place, rest, label) { return factHtml(ICON_PLACE, label || 'Obtained at', esc(place), rest); }
+  // Inscription (regular): quotes, in gray (blue means signed).
+  const QUOTES = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M100,56H40A16,16,0,0,0,24,72v64a16,16,0,0,0,16,16h60v8a32,32,0,0,1-32,32,8,8,0,0,0,0,16,48.05,48.05,0,0,0,48-48V72A16,16,0,0,0,100,56Zm0,80H40V72h60ZM216,56H156a16,16,0,0,0-16,16v64a16,16,0,0,0,16,16h60v8a32,32,0,0,1-32,32,8,8,0,0,0,0,16,48.05,48.05,0,0,0,48-48V72A16,16,0,0,0,216,56Zm0,80H156V72h60Z"/></svg>';
+  // Signature (regular): the mark for a signature everywhere (count badge, Signed badge, who signed an item);
+  // the same drawing as the Autographed Memorabilia icon on the home screen, in its light weight.
+  const SIGN = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M232,168H63.86c2.66-5.24,5.33-10.63,8-16.11,15,1.65,32.58-8.78,52.66-31.14,5,13.46,14.45,30.93,30.58,31.25,9.06.18,18.11-5.2,27.42-16.37C189.31,143.75,203.3,152,232,152a8,8,0,0,0,0-16c-30.43,0-39.43-10.45-40-16.11a7.67,7.67,0,0,0-5.46-7.75,8.14,8.14,0,0,0-9.25,3.49c-12.07,18.54-19.38,20.43-21.92,20.37-8.26-.16-16.66-19.52-19.54-33.42a8,8,0,0,0-14.09-3.37C101.54,124.55,88,133.08,79.57,135.29,88.06,116.42,94.4,99.85,98.46,85.9c6.82-23.44,7.32-39.83,1.51-50.1-3-5.38-9.34-11.8-22.06-11.8C61.85,24,49.18,39.18,43.14,65.65c-3.59,15.71-4.18,33.21-1.62,48s7.87,25.55,15.59,31.94c-3.73,7.72-7.53,15.26-11.23,22.41H24a8,8,0,0,0,0,16H37.41c-11.32,21-20.12,35.64-20.26,35.88a8,8,0,1,0,13.71,8.24c.15-.26,11.27-18.79,24.7-44.12H232a8,8,0,0,0,0-16ZM58.74,69.21C62.72,51.74,70.43,40,77.91,40c5.33,0,7.1,1.86,8.13,3.67,3,5.33,6.52,24.19-21.66,86.39C56.12,118.78,53.31,93,58.74,69.21Z"/></svg>';
+
+  const $ = function (s) { return document.querySelector(s); };
+  const $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+  const esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  };
+
+  // Game Used with nothing filtered: the search, the team chip, the legend (signed / unsigned) and what the
+  // Filters sheet holds. Every one narrows the list, together.
+  function guBlank() {
+    return { q: '', team: '', signed: '', season: '', sport: '', type: '', usage: '', result: '', attended: false, video: false, matched: false, sort: 'new' };
+  }
+  const state = {
+    items: [], logos: {}, view: [],
+    q: '', sport: '', team: '', type: '', how: '', usage: '', cert: false, ins: false, sort: 'new',
+    currentId: null, trail: [], navDir: 0, checks: {}, detailHash: null, homeScreen: null, revealed: false, screen: null, hash: '',
+    gu: null, g: guBlank(), currentGu: null,
+    teamChecks: {},
+    guList: [] // the game-used items on screen, in order (for previous / next)
+  };
+
+  /* ---------- Helpers ---------- */
+  function teamInfo(name) {
+    return TEAMS[name] || { color: NEUTRAL };
+  }
+  function fmtDate(iso) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return iso || '';
+    const p = iso.split('-');
+    return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  function money(n) { return n == null ? '' : '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function initials(name) {
+    const parts = String(name).replace(/\b(Jr\.?|Sr\.?|II|III)\b/g, '').replace(/\./g, ' ').trim().split(/\s+/);
+    return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+  }
+  function title(item) {
+    if (item.model && item.type && item.model.toLowerCase().indexOf(item.type.toLowerCase()) !== -1) return item.model;
+    return [item.model, item.type].filter(Boolean).join(' ');
+  }
+  function signerLine(item) {
+    const n = item.signatures.map(function (s) { return s.signer; });
+    if (n.length === 1) return n[0];
+    if (n.length === 2) return n[0] + ' & ' + n[1];
+    return n[0] + ' + ' + (n.length - 1) + ' more';
+  }
+  // The small line above a name, on cards and panels alike: "ID · year · line" (whatever the item has).
+  function eyebrow(parts) { return parts.filter(Boolean).join(' · '); }
+  // Year of the first signature, or "2023–2025" when the signatures came in different years.
+  function itemYear(item) {
+    if (!item._first || item._first === '9999') return '';
+    const a = item._first.slice(0, 4), b = (item._last || '').slice(0, 4);
+    return b && b !== a ? a + '–' + b : a;
+  }
+  /* Waiting for a collection's first data (only when nothing was kept in this browser). A home card moves the
+     same sheen as a photo frame over the whole card (.hub-card.loading), with the number and the line held empty
+     at their size (HOLD_NUM, HOLD_TEXT); a summary line on a collection page is a gray bar with a sheen (SKEL_TEXT).
+     Nothing jumps when the data comes. */
+  const HOLD_NUM = '<span class="hold" aria-hidden="true">00</span>';
+  const HOLD_TEXT = '<span class="sr">Loading</span><span class="hold" aria-hidden="true">Loading</span>';
+  const SKEL_TEXT = '<span class="sr">Loading</span><i class="skel-line" aria-hidden="true"></i>';
+  // The heading over the signatures in every panel: "Signed by 3 people", or just "Signed by" for one person
+  // (the name is right below it, on the signature card or the linked item).
+  function signedHeading(names) {
+    const n = unique(names).length;
+    return '<h3>Signed by' + (n > 1 ? ' <span>' + n + ' people</span>' : '') + '</h3>';
+  }
+  // The same empty list in every collection; its button does what the "Clear filters" link does.
+  function emptyHtml(clearId) {
+    return '<div class="empty"><h2>Nothing matches yet</h2><p>Try another search, or clear the filters to see everything.</p>' +
+      '<button data-clear="' + clearId + '">Clear filters</button></div>';
+  }
+  document.addEventListener('click', function (e) {
+    const b = e.target.closest('[data-clear]');
+    if (b) document.getElementById(b.dataset.clear).click();
+  });
+  /* The bar and legend under a collection's summary. parts: [key, label, count, color]; the legend entries are
+     buttons that filter the list (pressing the one already on clears it); active = the key on, or ''. */
+  function progressHtml(parts, active, attr) {
+    parts = parts.filter(function (p) { return p[2] > 0; });
+    return '<div class="pbar" aria-hidden="true">' + parts.map(function (p) {
+      return '<span class="' + (p[0] === active ? 'on' : '') + '" style="--n:' + p[2] + ';--c:' + p[3] + '"></span>';
+    }).join('') + '</div>' +
+      '<div class="legend">' + parts.map(function (p) {
+        return '<button class="seg" ' + attr + '="' + esc(p[0]) + '" aria-pressed="' + (p[0] === active) + '" style="--c:' + p[3] + '"><i></i><b>' + p[2] + '</b>' + esc(p[1]) + '</button>';
+      }).join('') + '</div>';
+  }
+  /* An item's lines under its tags, in a panel: an icon, a small gray word and the value in bold, one per line.
+     The claim first (who used it: a gray icon, information), then its proof (certificate, photo match: blue icons,
+     like a seal). Phosphor regular: user, images; the seal is ICON_CERT. */
+  const ICON_PLAYER = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"/></svg>';
+  const ICON_MATCH = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216,40H72A16,16,0,0,0,56,56V72H40A16,16,0,0,0,24,88V200a16,16,0,0,0,16,16H184a16,16,0,0,0,16-16V184h16a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM72,56H216v62.75l-10.07-10.06a16,16,0,0,0-22.63,0l-20,20-44-44a16,16,0,0,0-22.62,0L72,109.37ZM184,200H40V88H56v80a16,16,0,0,0,16,16H184Zm32-32H72V132l36-36,49.66,49.66a8,8,0,0,0,11.31,0L194.63,120,216,141.38V168ZM160,84a12,12,0,1,1,12,12A12,12,0,0,1,160,84Z"/></svg>';
+  function lineHtml(icon, label, value, cls) {
+    return value ? '<p class="line-fact' + (cls ? ' ' + cls : '') + '">' + icon + '<span>' + (label ? esc(label) + ' ' : '') + '<b>' + esc(value) + '</b></span></p>' : '';
+  }
+  function certLine(label, auth, cert) { return lineHtml(ICON_CERT, label, [auth, cert].filter(Boolean).join(' · '), 'proof'); }
+  function matchedLine(on) { return on ? '<p class="line-fact proof">' + ICON_MATCH + '<span>Photo matched</span></p>' : ''; }
+  // How used an item was, as three steps of the same gold: Game Used filled, Practice Used outlined, Team Issued none.
+  function usageCls(u) { return u === 'Game Used' ? ' gold' : u === 'Practice Used' ? ' practice' : ''; }
+  // The usage on a photo, with what proves it inside the same tag, as icons after a thin line
+  // (proofs = [[icon, label], ...]: Video, Photo matched). Screen readers hear it all in words.
+  function usageBadge(u, proofs) {
+    proofs = proofs || [];
+    const words = [u].concat(proofs.map(function (p) { return p[1]; })).join(', ');
+    return '<span class="badge' + usageCls(u) + '"' + (proofs.length ? ' aria-label="' + esc(words) + '" title="' + esc(words) + '"' : '') + '>' + esc(u) +
+      (proofs.length ? '<span class="proofs" aria-hidden="true">' + proofs.map(function (p) { return p[0]; }).join('') + '</span>' : '') + '</span>';
+  }
+  // The usage as a tag next to the team (the same steps as on the card).
+  function usageTag(u) { return u ? '<span class="use-tag' + usageCls(u) + '">' + esc(u) + '</span>' : ''; }
+  // A note in a panel: the text at its size, no icon (above the purchase line, which ends the panel).
+  function noteHtml(text) { return '<p class="note">' + linkify(text) + '</p>'; }
+  /* Cards that lead to the signed item in Autographed Memorabilia, under one heading ("Also in" always leads to
+     another collection). The card shows the item as its card there: who signed it, first signed first; up to three
+     names, then the first two and how many more ("Rick Dempsey, Al Bumbry and 6 more"). */
+  const ALSO_AM = '<h3>Also in Autographed Memorabilia</h3>';
+  // An item's signatures, first signed first; one with no date goes last (it is not "the first to sign").
+  function sigsByDate(it) {
+    return it.signatures.slice().sort(function (a, b) { return (a.date || '9999').localeCompare(b.date || '9999'); });
+  }
+  // When an item was signed: the date of its first signature ("Aug 21, 2023"), or with range the first and the last
+  // ("Jul 23, 2022 to Jun 10, 2023"); '' when no signature has a date.
+  function signedWhen(it, range) {
+    const dates = it.signatures.map(function (s) { return s.date; }).filter(Boolean).sort();
+    if (!dates.length) return '';
+    const first = dates[0], last = dates[dates.length - 1];
+    return range && first !== last ? fmtDate(first) + ' to ' + fmtDate(last) : fmtDate(first);
+  }
+  function signerNames(it) {
+    const names = sigsByDate(it).map(function (s) { return s.signer; }).filter(function (n, i, all) { return all.indexOf(n) === i; });
+    const list = names.length > 3 ? names.slice(0, 2).concat((names.length - 2) + ' more') : names; // never "and 1 more"
+    return list.length > 1 ? list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] : list[0] || '';
+  }
+  // One row of a link list in a panel (more from a signer...): small photo, title, line, arrow.
+  function linkRow(target, media, title, sub) {
+    return '<li><button data-go="' + esc(target) + '">' + media + '<span><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></span><span class="go">›</span></button></li>';
+  }
+  // What a photo frame shows before (or instead of) the photo: initials or an icon when there is no photo; when
+  // there is one, only the team color with a soft sheen while it loads (the initials or icon come back only
+  // if the photo cannot be loaded), so nothing shows up that the photo then replaces.
+  function photoFrame(content, hasPhoto) {
+    return '<div class="ph' + (hasPhoto ? ' loading' : '') + '">' + content + '</div>';
+  }
+  /* Things to check in each collection, shown at the top of its settings menu with a dot on the button. From the
+     server: photos whose name matches nothing, copies made by Drive, one name used twice, Item IDs not like AM-0000,
+     Signed entries that are not Item IDs, a Game Used tab that could not be read and, in Game Used, the data of a
+     game and of its rows (gameUsedChecks_ in Code.gs). From the page, once the collections are here: Signed IDs
+     that are not in Autographed Memorabilia, and a game-used item whose type or price disagrees with its signed
+     item. The app only reports them. */
+  const CHECKS = {
+    am: { box: '#am-checks', btn: '#menu-btn', orphan: ['photo matches no item', 'photos match no item', 'Rename to the Item ID, like AM-0015.jpg (extras AM-0015-2.jpg):'] },
+    gu: { box: '#gu-checks', btn: '#gu-menu-btn', orphan: ['photo matches no item', 'photos match no item', 'Rename to the Item ID, like GU-0001.jpg (extras GU-0001-2.jpg):'] }
+  };
+  function updateChecks() {
+    // A Signed ID is checked only once Autographed Memorabilia is here.
+    const lost = function (list, label) {
+      if (!state.items.length || !list) return [];
+      return list.reduce(function (out, x) {
+        return out.concat(x.signed.filter(function (id) { return !amItem(id); }).map(function (id) { return label(x) + ' → ' + id; }));
+      }, []);
+    };
+    const signed = { gu: lost(state.gu, function (g) { return g.id; }) };
+    // A game-used item and its signed item in Autographed Memorabilia: the same Item Type; a price in one tab only (where
+    // the purchase was: Game Used when bought unsigned, Autographed Memorabilia when bought signed).
+    const pairs = state.items.length && state.gu ? state.gu.reduce(function (out, g) {
+      return out.concat(g.signed.map(function (id) { return [g, amItem(id)]; }).filter(function (p) { return p[1]; }));
+    }, []) : [];
+    const typeDiff = pairs.filter(function (p) { return p[0].type && p[1].type && p[0].type !== p[1].type; })
+      .map(function (p) { return p[0].id + ' ' + p[0].type + ' / ' + p[1].id + ' ' + p[1].type; });
+    const priceTwice = pairs.filter(function (p) { return p[0].price != null && p[1].price != null; })
+      .map(function (p) { return p[0].id + ' ' + money(p[0].price) + ' / ' + p[1].id + ' ' + money(p[1].price); });
+    Object.keys(CHECKS).forEach(function (k) {
+      const c = state.checks[k] || {}, t = CHECKS[k];
+      const groups = [
+        [c.orphans || [], t.orphan[0], t.orphan[1], t.orphan[2]],
+        [c.copies || [], 'copy made by Drive', 'copies made by Drive', 'Ignored by the app. Delete or rename:'],
+        [(c.dupes || []).map(function (d) { return d.join(' and '); }), 'name used twice', 'names used twice', 'Only one shows. Keep one:'],
+        k === 'gu' ? [c.badIds || [], 'Item ID to fix', 'Item IDs to fix', 'Not like GU-0000, or used twice:']
+          : [c.badIds || [], 'Item ID not like AM-0000', 'Item IDs not like AM-0000', 'Shows as a separate item:'],
+        [c.videos || [], 'video matches no item', 'videos match no item', 'Name it by the ball’s hologram, like AB123456.mp4:'],
+        [c.teamsTab || (k === 'am' && state.teamChecks.teamsTab) || [], 'Teams tab could not be read', 'Teams tab could not be read', 'Colors depend on it:'],
+        [k === 'am' ? state.teamChecks.noColor || [] : [], 'team with no color', 'teams with no color', 'Add its Color to the Teams tab (gray until then):'],
+        [k === 'am' ? state.teamChecks.badColor || [] : [], 'Color to fix', 'Colors to fix', 'Write it like #2E1F8A (gray until then):'],
+        [k === 'am' ? state.teamChecks.noLogo || [] : [], 'team with no logo', 'teams with no logo', 'Add <Team>.png to Team Logos (sport icon until then):'],
+        [k === 'am' ? state.teamChecks.logoOrphans || [] : [], 'logo with no team', 'logos with no team', 'Add the team to the Teams tab, or rename the file:'],
+        [c.guTab || [], 'Game Used tab could not be read', 'Game Used tab could not be read', 'Signed items show without usage and certificate:'],
+        [c.badSigned || [], 'Signed entry to fix', 'Signed entries to fix', 'Use Item IDs like AM-0015, separated by commas:'],
+        [signed[k] || [], 'signed ID not found', 'signed IDs not found', 'Not in Autographed Memorabilia:'],
+        [c.seasons || [], 'Season does not match its game', 'Seasons do not match their games', 'The year the season started (January games: the year before):'],
+        [c.noSeason || [], 'game with no Season', 'games with no Season', 'Fill the Season (they go to the end until then):'],
+        [c.teams || [], 'Team not in its game', 'Teams not in their games', 'Use the Away or Home Team, written the same:'],
+        [c.results || [], 'Result does not match the score', 'Results do not match their scores', 'W, L or D for the item’s Team, as the Score says:'],
+        [c.noGame || [], '“I was there” with no game', '“I was there” with no game', 'Fill the Game Date or clear Attended:'],
+        [c.usage || [], 'Usage written another way', 'Usages written another way', 'Write it like the other items:'],
+        [c.signedTwice || [], 'signed item in two rows', 'signed items in two rows', 'Two rows name the same signed item. Keep one:'],
+        [k === 'gu' ? typeDiff : [], 'Item Type differs from Autographed', 'Item Types differ from Autographed', 'Use the same Item Type in both tabs:'],
+        [k === 'gu' ? priceTwice : [], 'price in both tabs', 'prices in both tabs', 'Keep one price: Game Used if bought unsigned, Autographed if signed:'],
+      ].filter(function (g) { return g[0].length; });
+      const n = groups.reduce(function (s, g) { return s + g[0].length; }, 0);
+      $(t.box).hidden = !n;
+      $(t.box).innerHTML = n ? '<b>' + n + (n > 1 ? ' things' : ' thing') + ' to check</b><ul>' + groups.map(function (g) {
+        return '<li><b>' + esc(g[0].length + ' ' + (g[0].length > 1 ? g[2] : g[1])) + '</b><small>' + esc(g[3]) + ' ' +
+          g[0].map(function (x) { return '<span>' + esc(x) + '</span>'; }).join(', ') + '</small></li>';
+      }).join('') + '</ul>' : '';
+      $(t.btn).classList.toggle('alert', n > 0);
+    });
+  }
+  /* The chips and legends of Game Used are drawn again on every change, which would drop the keyboard focus
+     from the one just pressed. holdFocus(boxes) remembers it (by its data- attribute) and returns a function
+     that puts the focus back on its new copy. */
+  function holdFocus(boxes) {
+    const at = document.activeElement;
+    const box = at && boxes.find(function (b) { return $(b).contains(at); });
+    const attr = box && Array.prototype.find.call(at.attributes, function (a) { return a.name.indexOf('data-') === 0; });
+    return function () {
+      if (!attr) return;
+      const el = $$(box + ' [' + attr.name + ']').find(function (x) { return x.getAttribute(attr.name) === attr.value; });
+      if (el) el.focus({ preventScroll: true });
+    };
+  }
+  // Gray cards with a sheen while a collection's first data loads.
+  function skelGrid(n) {
+    return Array.from({ length: n }).map(function () {
+      return '<div class="skel"><div class="m"></div><div class="t"></div><div class="t"></div></div>';
+    }).join('');
+  }
+  // The settings menu links of a screen, once the server sends them: [[key in links, link selector]...].
+  function setMenuLinks(pairs, links) {
+    pairs.forEach(function (p) {
+      const a = $(p[1]);
+      if (links[p[0]]) { a.href = links[p[0]]; a.removeAttribute('aria-disabled'); }
+    });
+  }
+  function missingRow(id, color) {
+    return linkRow(id, '<span class="media" style="--c:' + color + '"><span class="ph"><span class="initials">?</span></span></span>', id, 'Not found in Autographed Memorabilia');
+  }
+  // Search ignores case, accents and dots/apostrophes: "sao paulo" finds "São Paulo", "ohearn" finds "O'Hearn".
+  function searchable(text) {
+    return String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['\u2018\u2019`.]/g, '').toLowerCase();
+  }
+  // A link to Instagram, a post or a story highlight: the Instagram icon and the place it goes.
+  function instaLink(url, label) {
+    return '<a class="insta" href="' + url + '" target="_blank" rel="noopener">' + ICON_INSTAGRAM + label + '</a>';
+  }
+  // Notes as HTML: links (http/https only) become "Instagram" (with its icon) or "link". Punctuation right after a
+  // link is the sentence's, not the link's (as GitHub does): trailing . , ; : ! ? stay out, and a closing ")" too
+  // unless the link opened it ("…/Cal_Ripken_(disambiguation)" keeps it).
+  function linkify(text) {
+    return esc(text).replace(/https?:\/\/[^\s]+/g, function (url) {
+      let tail = '';
+      for (;;) {
+        const last = url.slice(-1);
+        if ('.,;:!?'.indexOf(last) >= 0 || (last === ')' && url.split(')').length > url.split('(').length)) {
+          tail = last + tail;
+          url = url.slice(0, -1);
+        } else break;
+      }
+      return (/instagram\.com/i.test(url) ? instaLink(url, 'Instagram') : '<a href="' + url + '" target="_blank" rel="noopener">link</a>') + tail;
+    });
+  }
+  // An Autographed Memorabilia item by Item ID.
+  function amItem(id) { return state.items.find(function (i) { return i.id === id; }); }
+  function primaryTeam(item) { return item.signatures[0] ? item.signatures[0].team : ''; }
+  function isCertified(item) { return !!(item.itemAuth || item.itemCert) || item.signatures.some(function (s) { return s.autoAuth || s.autoCert; }); }
+  function hasInscription(item) { return item.signatures.some(function (s) { return s.inscription; }); }
+  function unique(arr) { return Array.from(new Set(arr.filter(Boolean))).sort(function (a, b) { return a.localeCompare(b); }); }
+  function allSigs() { const out = []; state.items.forEach(function (it) { it.signatures.forEach(function (s) { out.push(s); }); }); return out; }
+  /* A sport's icon (Phosphor): in place of a team logo when the team has none yet (white on the team color), and
+     for an item with no team at all (a boxer's glove), with the sport's name. Sport is a short, stable list in the
+     spreadsheet; one that is not here gets a medal, so nothing breaks. */
+  const SPORT_ICONS = {
+    Baseball: '<path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24ZM72.09,195.91c.82-1,1.64-1.93,2.42-2.91A8,8,0,1,0,62,183l-1.34,1.62a87.82,87.82,0,0,1,0-113.24L62,73A8,8,0,1,0,74.51,63c-.78-1-1.6-2-2.42-2.91a87.84,87.84,0,0,1,111.82,0c-.82,1-1.64,1.92-2.42,2.91A8,8,0,1,0,194,73l1.34-1.62a87.82,87.82,0,0,1,0,113.24L194,183a8,8,0,1,0-12.48,10c.78,1,1.6,1.95,2.42,2.91a87.84,87.84,0,0,1-111.82,0Zm23.8-50.59a104.5,104.5,0,0,1-4.48,17.35,8,8,0,0,1-15.09-5.34,87.1,87.1,0,0,0,3.79-14.65,8,8,0,1,1,15.78,2.64Zm0-34.64a8,8,0,0,1-6.57,9.21A8.52,8.52,0,0,1,88,120a8,8,0,0,1-7.88-6.68,87.1,87.1,0,0,0-3.79-14.65,8,8,0,0,1,15.09-5.34A104.5,104.5,0,0,1,95.89,110.68Zm78.91,56.86a8,8,0,0,1-10.21-4.87,104.5,104.5,0,0,1-4.48-17.35,8,8,0,1,1,15.78-2.64,87.1,87.1,0,0,0,3.79,14.65A8,8,0,0,1,174.8,167.54Zm-14.69-56.86a104.5,104.5,0,0,1,4.48-17.35,8,8,0,0,1,15.09,5.34,87.1,87.1,0,0,0-3.79,14.65A8,8,0,0,1,168,120a8.52,8.52,0,0,1-1.33-.11A8,8,0,0,1,160.11,110.68Z"/>',
+    Football: '<path d="M229.06,53.89a32.92,32.92,0,0,0-26.95-26.95c-32.37-5.49-93.39-8-138.27,36.9s-42.39,105.9-36.9,138.27a32.92,32.92,0,0,0,27,26.95A206.58,206.58,0,0,0,88.27,232c32.09,0,72.05-8,103.89-39.84C237.05,147.28,234.55,86.26,229.06,53.89Zm-61.61-14a192,192,0,0,1,32,2.8A16.94,16.94,0,0,1,213.3,56.56,188.59,188.59,0,0,1,216,92.78L163.21,40C164.61,39.92,166,39.9,167.45,39.9ZM56.56,213.3A16.94,16.94,0,0,1,42.7,199.44,188.59,188.59,0,0,1,40,163.22L92.78,216A187.79,187.79,0,0,1,56.56,213.3Zm124.3-32.44c-11.61,11.6-33.27,27.73-67.37,33.27L41.87,142.51c5.54-34.1,21.67-55.76,33.27-67.37S108.4,47.4,142.5,41.86l71.63,71.63C208.59,147.59,192.46,169.25,180.86,180.86Zm-15.22-90.5a8,8,0,0,1,0,11.31L151.3,116l6.34,6.34a8,8,0,1,1-11.31,11.3L140,127.31,127.31,140l6.34,6.34a8,8,0,1,1-11.3,11.31L116,151.3l-14.34,14.34a8,8,0,1,1-11.31-11.31L104.7,140l-6.34-6.34a8,8,0,0,1,11.31-11.3l6.34,6.34L128.69,116l-6.34-6.34a8,8,0,0,1,11.3-11.31L140,104.7l14.34-14.34A8,8,0,0,1,165.64,90.36Z"/>',
+    Soccer: '<path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm76.52,147.42H170.9l-9.26-12.76,12.63-36.78,15-4.89,26.24,20.13A87.38,87.38,0,0,1,204.52,171.42Zm-164-34.3L66.71,117l15,4.89,12.63,36.78L85.1,171.42H51.48A87.38,87.38,0,0,1,40.47,137.12Zm10-50.64,5.51,18.6L40.71,116.77A87.33,87.33,0,0,1,50.43,86.48ZM109,152,97.54,118.65,128,97.71l30.46,20.94L147,152Zm91.07-46.92,5.51-18.6a87.33,87.33,0,0,1,9.72,30.29Zm-6.2-35.38-9.51,32.08-15.07,4.89L136,83.79V68.21l29.09-20A88.58,88.58,0,0,1,193.86,69.7ZM146.07,41.87,128,54.29,109.93,41.87a88.24,88.24,0,0,1,36.14,0ZM90.91,48.21l29.09,20V83.79L86.72,106.67l-15.07-4.89L62.14,69.7A88.58,88.58,0,0,1,90.91,48.21ZM63.15,187.42H83.52l7.17,20.27A88.4,88.4,0,0,1,63.15,187.42ZM110,214.13,98.12,180.71,107.35,168h41.3l9.23,12.71-11.83,33.42a88,88,0,0,1-36.1,0Zm55.36-6.44,7.17-20.27h20.37A88.4,88.4,0,0,1,165.31,207.69Z"/>',
+    Basketball: '<path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24ZM60,72.17A87.2,87.2,0,0,1,79.63,120H40.37A87.54,87.54,0,0,1,60,72.17ZM136,120V40.37a87.59,87.59,0,0,1,48.68,20.37A103.06,103.06,0,0,0,160.3,120Zm-16,0H95.7A103.06,103.06,0,0,0,71.32,60.74,87.59,87.59,0,0,1,120,40.37ZM79.63,136A87.2,87.2,0,0,1,60,183.83,87.54,87.54,0,0,1,40.37,136Zm16.07,0H120v79.63a87.59,87.59,0,0,1-48.68-20.37A103.09,103.09,0,0,0,95.7,136Zm40.3,0h24.3a103.09,103.09,0,0,0,24.38,59.26A87.59,87.59,0,0,1,136,215.63Zm40.37,0h39.26A87.54,87.54,0,0,1,196,183.83,87.2,87.2,0,0,1,176.37,136Zm0-16A87.2,87.2,0,0,1,196,72.17,87.54,87.54,0,0,1,215.63,120Z"/>',
+    Hockey: '<path d="M224,152H130.9L38.1,42.82A8,8,0,0,0,25.9,53.18L159.51,210.36A16,16,0,0,0,171.7,216H224a16,16,0,0,0,16-16V168A16,16,0,0,0,224,152Zm-79.5,16H192v32H171.7ZM224,200H208V168h16ZM112.18,179.55a8,8,0,0,0-11.27.91L84.3,200H64V168H85.2a8,8,0,0,0,0-16H32a16,16,0,0,0-16,16v32a16,16,0,0,0,16,16H84.3a16,16,0,0,0,12.19-5.64l16.61-19.53A8,8,0,0,0,112.18,179.55ZM32,168H48v32H32Zm117.9-45.18,68-80a8,8,0,0,1,12.2,10.36l-68,80a8,8,0,1,1-12.2-10.36Z"/>',
+    Boxing: '<path d="M168,16H120A56.06,56.06,0,0,0,64,72H56a32,32,0,0,0-32,32v29.19a16.09,16.09,0,0,0,3.51,10,8,8,0,0,0,.62.69L64,179.34V216a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V177.12l15.38-53.85a15.89,15.89,0,0,0,.62-4.39V72A56.06,56.06,0,0,0,168,16Zm40,102.88L192.31,173.8A7.85,7.85,0,0,0,192,176v40H80V176a8,8,0,0,0-2.38-5.69L40,133.12V104A16,16,0,0,1,56,88h8v16a8,8,0,0,0,16,0V72a40,40,0,0,1,40-40h48a40,40,0,0,1,40,40Zm-36.42,48.28L153.89,176l17.69,8.84a8,8,0,0,1-7.16,14.32L136,184.94l-28.42,14.22a8,8,0,1,1-7.16-14.32L118.11,176l-17.69-8.84a8,8,0,1,1,7.16-14.32L136,167.06l28.42-14.22a8,8,0,1,1,7.16,14.32Z"/>'
+  };
+  const SPORT_ICON_OTHER = '<path d="M216,96A88,88,0,1,0,72,163.83V240a8,8,0,0,0,11.58,7.16L128,225l44.43,22.21A8.07,8.07,0,0,0,176,248a8,8,0,0,0,8-8V163.83A87.85,87.85,0,0,0,216,96ZM56,96a72,72,0,1,1,72,72A72.08,72.08,0,0,1,56,96ZM168,227.06l-36.43-18.21a8,8,0,0,0-7.16,0L88,227.06V174.37a87.89,87.89,0,0,0,80,0ZM128,152A56,56,0,1,0,72,96,56.06,56.06,0,0,0,128,152Zm0-96A40,40,0,1,1,88,96,40,40,0,0,1,128,56Z"/>';
+  function sportIcon(sport) {
+    return '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">' + (SPORT_ICONS[sport] || SPORT_ICON_OTHER) + '</svg>';
+  }
+  // The sport a team plays, from its signatures.
+  function teamSport(team) {
+    for (let i = 0; i < state.items.length; i++) {
+      const s = state.items[i].signatures.find(function (x) { return x.team === team && x.sport; });
+      if (s) return s.sport;
+    }
+    return '';
+  }
+  function logoHtml(team) {
+    const logo = state.logos[team];
+    return logo ? '<img src="' + esc(logo) + '" alt="">' : sportIcon(teamSport(team));
+  }
+  // A sport as a team tag, for an item with no team (a boxer): the sport's icon in a gray circle and its name.
+  function sportTagHtml(sport) {
+    return '<span class="team-tag" style="--c:' + NEUTRAL + '"><span class="dot">' + sportIcon(sport) + '</span>' + esc(sport) + '</span>';
+  }
+  /* The team on a card: its logo in a small white circle at the bottom left of the photo (up to two teams,
+     then "+N"; no logo yet: the sport's icon on the team color; no team: the sport's icon on gray), in place of
+     the team name in the text. Kept up to date by loadLogos like every .dot[data-team]. */
+  function crestHtml(teams, sports) {
+    teams = unique(teams);
+    if (!teams.length) {
+      // No team (a boxer): the sport's icon in the same circle.
+      const sport = unique(sports || [])[0];
+      return sport ? '<span class="crest" title="' + esc(sport) + '"><span class="sr">' + esc(sport) + '</span><span class="dot" style="--c:' + NEUTRAL + '" aria-hidden="true">' + sportIcon(sport) + '</span></span>' : '';
+    }
+    return '<span class="crest" title="' + esc(teams.join(', ')) + '"><span class="sr">' + esc(teams.join(', ')) + '</span>' +
+      teams.slice(0, 2).map(function (t) {
+        return '<span class="dot" data-team="' + esc(t) + '" style="--c:' + teamInfo(t).color + '" aria-hidden="true">' + logoHtml(t) + '</span>';
+      }).join('') + (teams.length > 2 ? '<span class="more" aria-hidden="true">+' + (teams.length - 2) + '</span>' : '') + '</span>';
+  }
+  // The Teams tab: each team's color, under its name and its former names; then every screen is drawn again in color.
+  function loadTeams() {
+    loadData('teams', 'getTeams', function (data) {
+      Object.keys(TEAMS).forEach(function (k) { delete TEAMS[k]; });
+      Object.keys(TEAM_NOW).forEach(function (k) { delete TEAM_NOW[k]; });
+      (data.teams || []).forEach(function (t) {
+        // Each name, former ones too, to the team today: a renamed team counts once.
+        [t.team].concat(t.former || []).forEach(function (n) { TEAM_NOW[n] = t.team; });
+        if (!t.color) return;
+        [t.team].concat(t.former || []).forEach(function (n) { TEAMS[n] = { color: t.color }; });
+      });
+      state.teamChecks = data.checks || {};
+      renderHub();
+      if (state.items.length) render(true);
+      if (state.gu) renderGu(true);
+      // The Autographed team chips are built once with the collection (they keep which one is pressed): recolor them.
+      $$('#teams .team-chip[data-team]').forEach(function (b) { if (b.dataset.team) b.style.setProperty('--c', teamInfo(b.dataset.team).color); });
+      refreshPanel();
+      updateChecks();
+    }, function (err, shownKept) {
+      if (shownKept) return;
+      state.teamChecks = { noColor: [], teamsTab: [err && err.message ? err.message : String(err)] };
+      updateChecks();
+    });
+  }
+  function loadLogos() {
+    loadData('logos', 'getLogos', function (logos) {
+      state.logos = logos || {};
+      // Every logo spot (.dot[data-team]): team chips and team tags.
+      $$('.dot[data-team]').forEach(function (d) { if (state.logos[d.dataset.team]) d.innerHTML = logoHtml(d.dataset.team); });
+    }, function () { /* the teams keep their sport icons */ });
+  }
+
+  /* ---------- Photos: fetched through the script, loaded as they scroll into view ----------
+     Sizes: each photo is asked for at the size it is shown (× screen density, at most 2), so the small copies
+     stay small enough for the server's cache (about 100 KB per item). The same photo in the same size is shared
+     by every place that shows it. Copies up to KEEP_W are also kept in this browser (IndexedDB), so a photo
+     seen once shows up at once the next time the app opens; photo references carry the file's last-updated
+     time (photoRef_ in Code.gs), so a replaced photo never shows its old copy. */
+  const CARD_W = 240;  // cards in the grids (2 columns on a phone, 5 on a computer)
+  const ROW_W = 64;    // thumbnails under the panel photo and photos in the link rows
+  const KEEP_W = 1400; // larger copies (the full-screen viewer) are not kept in the browser
+  const photoCache = {};
+  const photoQueue = [];
+  let photoActive = 0;
+  const localPreview = {};
+  function loadPhoto(pid, w) {
+    if (localPreview[pid]) return Promise.resolve(localPreview[pid]);
+    const key = pid + '@' + w;
+    if (photoCache[key]) return photoCache[key];
+    photoCache[key] = keptPhoto(key).then(function (kept) {
+      return kept || photoFromServer(pid, w).then(function (uri) {
+        if (w <= KEEP_W) keepPhoto(key, uri);
+        return uri;
+      });
+    });
+    photoCache[key].catch(function () { delete photoCache[key]; });
+    return photoCache[key];
+  }
+  function photoFromServer(pid, w) {
+    return new Promise(function (resolve, reject) {
+      if (!(window.google && google.script && google.script.run)) { resolve(pid); return; }
+      photoQueue.push(function () {
+        photoActive++;
+        google.script.run
+          .withSuccessHandler(function (uri) { photoActive--; pump(); resolve(uri); })
+          .withFailureHandler(function (err) { photoActive--; pump(); reject(err); })
+          .getPhoto(pid, w);
+      });
+      pump();
+    });
+  }
+  function pump() { while (photoActive < 4 && photoQueue.length) photoQueue.shift()(); }
+  // Width to ask the server for: the shown width × screen density, at most 1400 px
+  // (the full 2048 px is only fetched by the full-screen viewer).
+  function photoWidth(w) { return Math.min(1400, Math.round(w * Math.min(window.devicePixelRatio || 1, 2))); }
+  // The panel photo, sized to the photo area on this screen and rounded to 200 px steps
+  // (about 800 px on an iPhone, so the copy is shared by every panel and kept in the browser).
+  function panelPhotoWidth() {
+    const media = $('#d-stage .media');
+    const shown = media ? Math.max(media.clientWidth, media.clientHeight) : 500;
+    return Math.min(1400, Math.max(200, Math.round(photoWidth(shown || 500) / 200) * 200));
+  }
+
+  /* Kept in this browser (IndexedDB "memorabilia-showcase"): store "photos" ({ k: key, uri, at }), store "data"
+     (the last answer of getCollection, getGameUsed and getLogos, see loadData) and store
+     "videos" (the videos of the plays as they arrived, keyed by their reference, see loadVideo in JsPanel).
+     Best effort: when storage is not available (private window, full disk...) photos just come from the server.
+     Old copies are trimmed when there are more than KEEP_MAX. */
+  const KEEP_MAX = 600;
+  let photoDb = null;
+  function openPhotoDb() {
+    if (photoDb) return photoDb;
+    photoDb = new Promise(function (resolve) {
+      try {
+        const req = indexedDB.open('memorabilia-showcase', 3);
+        req.onupgradeneeded = function () {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('photos')) db.createObjectStore('photos', { keyPath: 'k' }).createIndex('at', 'at');
+          if (!db.objectStoreNames.contains('data')) db.createObjectStore('data'); // the last answer of each server call
+          if (!db.objectStoreNames.contains('videos')) db.createObjectStore('videos'); // ref -> the video (a Blob)
+        };
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = req.onblocked = function () { resolve(null); };
+      } catch (e) { resolve(null); }
+    });
+    return photoDb;
+  }
+  function keptPhoto(key) {
+    return openPhotoDb().then(function (db) {
+      if (!db) return null;
+      return new Promise(function (resolve) {
+        try {
+          const req = db.transaction('photos').objectStore('photos').get(key);
+          req.onsuccess = function () { resolve(req.result ? req.result.uri : null); };
+          req.onerror = function () { resolve(null); };
+        } catch (e) { resolve(null); }
+      });
+    });
+  }
+  function keepPhoto(key, uri) {
+    openPhotoDb().then(function (db) {
+      if (!db) return;
+      try { db.transaction('photos', 'readwrite').objectStore('photos').put({ k: key, uri: uri, at: Date.now() }); } catch (e) { /* not kept */ }
+    });
+  }
+  function trimKeptPhotos() {
+    openPhotoDb().then(function (db) {
+      if (!db) return;
+      try {
+        const store = db.transaction('photos', 'readwrite').objectStore('photos');
+        const count = store.count();
+        count.onsuccess = function () {
+          let extra = count.result - KEEP_MAX;
+          if (extra <= 0) return;
+          store.index('at').openCursor().onsuccess = function (e) {
+            const cur = e.target.result;
+            if (!cur || extra-- <= 0) return;
+            cur.delete();
+            cur.continue();
+          };
+        };
+      } catch (e) { /* nothing to trim */ }
+    });
+  }
+  function showImg(img) {
+    if (img.dataset.state) return;
+    img.dataset.state = 'loading';
+    const w = img.dataset.w === 'fit' ? panelPhotoWidth() : photoWidth(+img.dataset.w);
+    loadPhoto(img.dataset.pid, w).then(function (src) {
+      img.onload = function () { img.hidden = false; const ph = img.parentNode.querySelector('.ph'); if (ph && img.closest('.media') === ph.parentNode) ph.hidden = true; };
+      img.src = src;
+    }, function () {
+      img.dataset.state = 'failed';
+      const ph = img.parentNode.querySelector(':scope > .ph');
+      if (ph) ph.classList.remove('loading');
+    });
+  }
+  // Watch the photo frame, not the photo: the photo stays hidden until it loads,
+  // and a hidden element never counts as being on screen.
+  const photoObserver = 'IntersectionObserver' in window
+    ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          photoObserver.unobserve(e.target);
+          const img = e.target.querySelector(':scope > img[data-pid]:not([data-state])');
+          if (img) showImg(img);
+        });
+      }, { rootMargin: '400px 0px' })
+    : null;
+  function hydrate(root) {
+    root.querySelectorAll('img[data-pid]:not([data-state])').forEach(function (img) {
+      if (photoObserver && !img.dataset.eager) photoObserver.observe(img.parentNode); else showImg(img);
+    });
+  }
+
+  /* ---------- Load ----------
+     The app opens with what it showed last time (kept in this browser) and asks the spreadsheet at the same
+     time; when the answer arrives it redraws only if something changed. The reload buttons spin while the
+     app is checking, so a still button means what is on screen is current. */
+  let syncingCalls = 0;
+  function syncing(d) {
+    syncingCalls += d;
+    document.body.classList.toggle('syncing', syncingCalls > 0);
+  }
+  function callServer(fn, sample) {
+    return new Promise(function (resolve, reject) {
+      if (window.google && google.script && google.script.run) google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn]();
+      else if (sample) setTimeout(function () { resolve(JSON.parse(JSON.stringify(sample))); }, 250);
+      else reject(new Error('This page needs to run as the Apps Script web app.'));
+    });
+  }
+  function keptData(name) {
+    return openPhotoDb().then(function (db) {
+      if (!db) return null;
+      return new Promise(function (resolve) {
+        try {
+          const req = db.transaction('data').objectStore('data').get(name);
+          req.onsuccess = function () { resolve(req.result || null); };
+          req.onerror = function () { resolve(null); };
+        } catch (e) { resolve(null); }
+      });
+    });
+  }
+  function keepData(name, data) {
+    openPhotoDb().then(function (db) {
+      if (!db) return;
+      try { db.transaction('data', 'readwrite').objectStore('data').put(data, name); } catch (e) { /* not kept */ }
+    });
+  }
+  /* name: what is kept; fn: the Code.gs function; apply(data, replacing): draws it (replacing = it replaces
+     what was shown from the kept copy, so lists keep their scroll and an open panel stays open);
+     failed(err, shownKept): the server call failed. */
+  const shownData = {}; // name -> JSON of what is on screen (from the kept copy or the server)
+  function loadData(name, fn, apply, failed, sample) {
+    let answered = false;
+    syncing(1);
+    if (!(name in shownData)) {
+      keptData(name).then(function (kept) {
+        if (!kept || answered || name in shownData) return;
+        shownData[name] = JSON.stringify(kept);
+        apply(kept, false);
+      });
+    }
+    callServer(fn, sample).then(function (data) {
+      answered = true;
+      syncing(-1);
+      const json = JSON.stringify(data);
+      keepData(name, JSON.parse(json)); // before apply, which adds working fields to the objects
+      if (json === shownData[name]) return; // nothing changed: nothing to redraw
+      const replacing = name in shownData;
+      shownData[name] = json;
+      apply(data, replacing);
+    }, function (err) {
+      answered = true;
+      syncing(-1);
+      failed(err, name in shownData);
+    });
+  }
+  // After new data: redraws the open panel (if any) where it was.
+  function refreshPanel() {
+    const scrim = $('#scrim'), top = scrim.scrollTop;
+    route(state.hash);
+    if (state.currentId) scrim.scrollTop = top;
+  }
+
+  function load() {
+    if (!state.items.length) {
+      $('#grid').className = 'grid';
+      $('#grid').innerHTML = skelGrid(8);
+    }
+    loadData('collection', 'getCollection', ready, function (err, shownKept) {
+      if (shownKept) toast('Could not check the spreadsheet: showing what was here last time.', true); else fail(err);
+    }, window.SAMPLE_DATA);
+  }
+
+  function ready(data, replacing) {
+    state.items = data.items || [];
+    state.checks.am = data.checks;
+    setMenuLinks([['sheet', '#lnk-sheet'], ['photos', '#lnk-photos'], ['logos', '#lnk-logos']], data.links || {});
+    state.items.forEach(function (it) {
+      it._first = it.signatures.reduce(function (m, s) { return s.date && s.date < m ? s.date : m; }, '9999');
+      it._last = it.signatures.reduce(function (m, s) { return s.date && s.date > m ? s.date : m; }, '');
+      it._text = searchable([it.id, it.type, it.model, it.detail, it.usage, it.itemAuth, it.itemCert].concat(it.signatures.map(function (s) {
+        return [s.signer, s.team, s.sport, s.inscription, s.at, s.giftedBy, s.autoAuth, s.autoCert, s.notes, s.how].join(' ');
+      })).join(' '));
+    });
+    buildHero();
+    buildFilters();
+    render(replacing);
+    refreshPanel();
+    renderHub();
+    if (state.gu) renderGu(true);
+    updateChecks();
+  }
+
+  // Every reload button reads every collection and the Teams tab again (the panels link them to each other).
+  function reloadAll() { loadTeams(); load(); loadGu(); loadLogos(); }
+
+  function fail(err) {
+    $('#summary').textContent = '';
+    $('#grid').innerHTML = '<div class="empty"><h2>The collection didn’t load</h2><p>' + esc(err && err.message ? err.message : String(err)) +
+      '</p><p>Check that the spreadsheet has a tab named “Autographed Memorabilia”, then try again.</p><button id="retry">Try again</button></div>';
+    const r = $('#retry'); if (r) r.addEventListener('click', load);
+  }
+</script>

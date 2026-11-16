@@ -1,0 +1,233 @@
+<script>
+  'use strict';
+  /* JsCrop.html: framing a photo before it is saved ("Add photo").
+     Each picked or taken photo opens full screen with a square frame: drag to move it, pinch (or the mouse
+     wheel) to zoom, drag the ruler under the frame to straighten it (up to 45° either way; it snaps to 0°),
+     then "Use square" saves what is inside the frame, "Keep original" saves the whole photo, unrotated.
+     The iPhone camera opened from a web page has no square (1:1) option, so this is where photos become square.
+     Either way the photo is resized (longest side 2000 px) and saved as JPEG, which drops the location data. */
+
+  const CROP_MAX = 2000;   // longest side saved
+  const CROP_ZOOM = 4;     // how far in past "fills the frame"
+  const TILT_MAX = 45;     // straighten range, degrees either way
+  const TILT_PX = 8;       // ruler pixels per degree
+  const TILT_SNAP = 0.8;   // degrees around 0° that snap to straight
+
+  // The photo, upright and at most CROP_MAX px, on a canvas.
+  function decodePhoto(file) {
+    function viaImg() {
+      return new Promise(function (resolve, reject) {
+        const im = new Image(), url = URL.createObjectURL(file);
+        // The file's address is let go once the photo is read (it holds the whole file in memory).
+        im.onload = function () { URL.revokeObjectURL(url); resolve(im); };
+        im.onerror = function () { URL.revokeObjectURL(url); reject(new Error('This file is not a photo the browser can open.')); };
+        im.src = url;
+      });
+    }
+    const decode = window.createImageBitmap ? createImageBitmap(file, { imageOrientation: 'from-image' }).catch(viaImg) : viaImg();
+    return decode.then(function (src) {
+      const w = src.naturalWidth || src.width, h = src.naturalHeight || src.height;
+      const k = Math.min(1, CROP_MAX / Math.max(w, h));
+      const c = document.createElement('canvas');
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      const x = c.getContext('2d');
+      x.imageSmoothingQuality = 'high';
+      x.drawImage(src, 0, 0, c.width, c.height);
+      if (src.close) src.close(); // an ImageBitmap holds the full photo in memory until it is closed
+      return c;
+    });
+  }
+
+  function cropEl() {
+    let el = $('#crop');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'crop';
+    el.className = 'crop';
+    el.hidden = true;
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-label', 'Frame the photo');
+    el.innerHTML =
+      '<div class="crop-bar"><button class="crop-cancel" type="button">Cancel</button><span class="crop-pos"></span></div>' +
+      '<div class="crop-stage"><div class="crop-frame" aria-hidden="true"></div></div>' +
+      '<div class="crop-tilt" role="slider" tabindex="0" aria-label="Straighten" aria-valuemin="-' + TILT_MAX + '" aria-valuemax="' + TILT_MAX + '" aria-valuenow="0">' +
+        '<span class="crop-deg">0°</span><div class="crop-ruler"><i></i></div></div>' +
+      '<div class="crop-actions"><button class="crop-orig" type="button">Keep original</button><button class="crop-ok" type="button">Use square</button></div>';
+    document.body.appendChild(el);
+    return el;
+  }
+
+  /* Shows one photo in the frame. Resolves with a JPEG data URL, or null when cancelled. */
+  function framePhoto(file, index, total) {
+    return decodePhoto(file).catch(function (err) {
+      // The last photo of a batch cannot be opened: the frame left open by the one before closes too.
+      const el = $('#crop');
+      if (el && index === total - 1) { el.classList.remove('open'); el.hidden = true; }
+      throw err;
+    }).then(function (canvas) {
+      return new Promise(function (resolve) {
+        const el = cropEl();
+        const stage = el.querySelector('.crop-stage');
+        const frame = el.querySelector('.crop-frame');
+        el.querySelector('.crop-pos').textContent = total > 1 ? (index + 1) + ' of ' + total : '';
+        canvas.className = 'crop-img';
+        stage.insertBefore(canvas, frame);
+        el.hidden = false;
+        requestAnimationFrame(function () { el.classList.add('open'); });
+
+        const W = canvas.width, H = canvas.height;
+        const tilt = el.querySelector('.crop-tilt'), ruler = tilt.querySelector('i'), deg = tilt.querySelector('.crop-deg');
+        canvas.style.transformOrigin = '50% 50%';
+        /* The photo is placed by its center (cx, cy) on the stage, its scale s and its angle a (radians). It always
+           covers the square frame (fx, fy, F): at angle a the frame needs a scale of at least
+           F·(|cos a| + |sin a|) / min(W, H), and the center may move only as far as the frame stays inside. */
+        let F = 0, fx = 0, fy = 0, s = 1, a = 0, cx = 0, cy = 0;
+        function layout() {
+          const r = stage.getBoundingClientRect();
+          F = Math.floor(Math.min(r.width - 32, r.height - 32));
+          fx = (r.width - F) / 2; fy = (r.height - F) / 2;
+          frame.style.cssText = 'left:' + fx + 'px;top:' + fy + 'px;width:' + F + 'px;height:' + F + 'px';
+        }
+        function reach() { return F / 2 * (Math.abs(Math.cos(a)) + Math.abs(Math.sin(a))); }
+        function minScale() { return 2 * reach() / Math.min(W, H); }
+        function maxScale() { return F / Math.min(W, H) * CROP_ZOOM; }
+        function place(ns, ncx, ncy) {
+          s = Math.max(minScale(), Math.min(Math.max(maxScale(), minScale()), ns));
+          // The center's offset from the frame center, in the photo's own (unrotated) axes, kept within reach.
+          const mx = fx + F / 2, my = fy + F / 2, dx = ncx - mx, dy = ncy - my, c = Math.cos(a), sn = Math.sin(a);
+          const h = reach();
+          const ux = Math.max(-(s * W / 2 - h), Math.min(s * W / 2 - h, dx * c + dy * sn));
+          const uy = Math.max(-(s * H / 2 - h), Math.min(s * H / 2 - h, -dx * sn + dy * c));
+          cx = mx + ux * c - uy * sn; cy = my + ux * sn + uy * c;
+          canvas.style.transform = 'translate(' + (cx - W / 2) + 'px,' + (cy - H / 2) + 'px) rotate(' + a + 'rad) scale(' + s + ')';
+        }
+        function zoomAt(ns, px, py) {
+          const k = Math.max(minScale(), Math.min(maxScale(), ns)) / s;
+          place(s * k, px + (cx - px) * k, py + (cy - py) * k);
+        }
+        function setTilt(d, snap) {
+          d = Math.max(-TILT_MAX, Math.min(TILT_MAX, d));
+          if (snap && Math.abs(d) < TILT_SNAP) d = 0; // dragging: straight is easy to land on
+          a = d * Math.PI / 180;
+          ruler.style.transform = 'translateX(' + (-d * TILT_PX) + 'px)';
+          deg.textContent = (Math.round(d * 10) / 10).toFixed(d % 1 ? 1 : 0) + '°';
+          tilt.classList.toggle('off', d !== 0);
+          tilt.setAttribute('aria-valuenow', Math.round(d * 10) / 10);
+          place(s, cx, cy); // keeps the center; zooms in just enough if the turn would show a corner
+        }
+        function reset() { layout(); a = 0; setTilt(0); place(minScale(), fx + F / 2, fy + F / 2); }
+        reset();
+        window.addEventListener('resize', reset);
+
+        // One finger (or the mouse) moves the photo; two fingers zoom it.
+        const pts = {};
+        let g = null;
+        function local(e) { const r = stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+        function gesture() {
+          const p = Object.keys(pts).map(function (k) { return pts[k]; });
+          if (p.length >= 2) {
+            return { d: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y), x: (p[0].x + p[1].x) / 2, y: (p[0].y + p[1].y) / 2, s: s, cx: cx, cy: cy };
+          }
+          return p.length ? { x: p[0].x, y: p[0].y, s: s, cx: cx, cy: cy } : null;
+        }
+        function down(e) { stage.setPointerCapture(e.pointerId); pts[e.pointerId] = local(e); g = gesture(); }
+        function move(e) {
+          if (!(e.pointerId in pts)) return;
+          pts[e.pointerId] = local(e);
+          const now = gesture();
+          if (!g || !now) return;
+          if (g.d && now.d) {
+            const ns = Math.max(minScale(), Math.min(maxScale(), g.s * now.d / g.d)), k = ns / g.s;
+            place(ns, now.x + (g.cx - g.x) * k, now.y + (g.cy - g.y) * k);
+          } else if (!g.d && !now.d) {
+            place(s, g.cx + now.x - g.x, g.cy + now.y - g.y);
+          }
+        }
+        function up(e) { delete pts[e.pointerId]; g = gesture(); }
+        function wheel(e) { e.preventDefault(); const p = local(e); zoomAt(s * Math.exp(-e.deltaY / 300), p.x, p.y); }
+        stage.addEventListener('pointerdown', down);
+        stage.addEventListener('pointermove', move);
+        stage.addEventListener('pointerup', up);
+        stage.addEventListener('pointercancel', up);
+        stage.addEventListener('wheel', wheel, { passive: false });
+
+        // The ruler: drag it sideways (one degree every TILT_PX), arrow keys for half a degree, tap 0° to reset.
+        let t = null;
+        function tiltDown(e) {
+          if (e.target === deg) { setTilt(0); return; }
+          tilt.setPointerCapture(e.pointerId);
+          t = { x: e.clientX, d: a * 180 / Math.PI };
+          frame.classList.add('grid');
+        }
+        function tiltMove(e) { if (t) setTilt(t.d - (e.clientX - t.x) / TILT_PX, true); }
+        function tiltUp() { t = null; frame.classList.remove('grid'); }
+        function tiltKey(e) {
+          const step = e.key === 'ArrowLeft' ? -0.5 : e.key === 'ArrowRight' ? 0.5 : 0;
+          if (step) { e.preventDefault(); setTilt(Math.round((a * 180 / Math.PI + step) * 2) / 2); }
+        }
+        tilt.addEventListener('pointerdown', tiltDown);
+        tilt.addEventListener('pointermove', tiltMove);
+        tilt.addEventListener('pointerup', tiltUp);
+        tilt.addEventListener('pointercancel', tiltUp);
+        tilt.addEventListener('keydown', tiltKey);
+
+        // The whole photo, unrotated ("Keep original"), longest side at most CROP_MAX.
+        function jpeg(sx, sy, sw, sh) {
+          const k = Math.min(1, CROP_MAX / Math.max(sw, sh));
+          const out = document.createElement('canvas');
+          out.width = Math.round(sw * k); out.height = Math.round(sh * k);
+          const x = out.getContext('2d');
+          x.imageSmoothingQuality = 'high';
+          x.drawImage(canvas, sx, sy, sw, sh, 0, 0, out.width, out.height);
+          return out.toDataURL('image/jpeg', 0.85);
+        }
+        // The square as it shows in the frame, turned and zoomed like on screen (longest side at most CROP_MAX).
+        function squareJpeg() {
+          const n = Math.max(1, Math.round(Math.min(CROP_MAX, F / s))), k = n / F;
+          const out = document.createElement('canvas');
+          out.width = out.height = n;
+          const x = out.getContext('2d');
+          x.imageSmoothingQuality = 'high';
+          x.translate((cx - fx) * k, (cy - fy) * k);
+          x.rotate(a);
+          x.scale(s * k, s * k);
+          x.drawImage(canvas, -W / 2, -H / 2);
+          return out.toDataURL('image/jpeg', 0.85);
+        }
+        const bOk = el.querySelector('.crop-ok'), bOrig = el.querySelector('.crop-orig'), bCancel = el.querySelector('.crop-cancel');
+        function done(result) {
+          window.removeEventListener('resize', reset);
+          stage.removeEventListener('pointerdown', down);
+          stage.removeEventListener('pointermove', move);
+          stage.removeEventListener('pointerup', up);
+          stage.removeEventListener('pointercancel', up);
+          stage.removeEventListener('wheel', wheel);
+          tilt.removeEventListener('pointerdown', tiltDown);
+          tilt.removeEventListener('pointermove', tiltMove);
+          tilt.removeEventListener('pointerup', tiltUp);
+          tilt.removeEventListener('pointercancel', tiltUp);
+          tilt.removeEventListener('keydown', tiltKey);
+          frame.classList.remove('grid');
+          bOk.onclick = bOrig.onclick = bCancel.onclick = null;
+          document.removeEventListener('keydown', key, true);
+          canvas.remove();
+          if (index === total - 1 || result === null) {
+            el.classList.remove('open');
+            setTimeout(function () { if (!el.querySelector('.crop-img')) el.hidden = true; }, 200);
+          }
+          resolve(result);
+        }
+        bOk.onclick = function () { done(squareJpeg()); };
+        bOrig.onclick = function () { done(jpeg(0, 0, W, H)); };
+        bCancel.onclick = function () { done(null); };
+        function key(e) {
+          if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); done(null); }
+          // Enter uses the square, except on a button with the focus (Cancel, Keep original), which does its own thing.
+          else if (e.key === 'Enter' && !(e.target.closest && e.target.closest('button'))) { e.preventDefault(); e.stopImmediatePropagation(); bOk.onclick(); }
+        }
+        document.addEventListener('keydown', key, true);
+      });
+    });
+  }
+</script>

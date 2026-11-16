@@ -1,0 +1,6 @@
+**/**
+!Code.gs
+!*.html
+!appsscript.json
+tests/**
+node_modules/**

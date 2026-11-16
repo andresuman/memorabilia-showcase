@@ -1,0 +1,253 @@
+<script>
+  'use strict';
+
+  /* JsAutographed.html: the Autographed Memorabilia screen (hero, filters, grid, item panel). */
+
+  /* ---------- Hero ---------- */
+  function buildHero() {
+    const sigs = allSigs();
+    const people = unique(sigs.map(function (s) { return s.signer; })).length;
+    const counts = {};
+    sigs.forEach(function (s) { counts[s.how] = (counts[s.how] || 0) + 1; });
+    const pct = function (k) { return sigs.length ? Math.round((counts[k] || 0) / sigs.length * 100) : 0; };
+
+    $('#summary').innerHTML = '<b>' + state.items.length + ' items</b> and <b>' + sigs.length + ' signatures</b> from ' + people +
+      ' people.';
+
+    const prov = $('#provenance');
+    const keys = HOW_ORDER.filter(function (k) { return counts[k]; });
+    prov.innerHTML =
+      '<div class="pbar" aria-hidden="true">' + keys.map(function (k) {
+        return '<span data-how="' + esc(k) + '" style="--n:' + counts[k] + ';--c:' + HOW_COLOR[k] + '"></span>';
+      }).join('') + '</div>' +
+      '<div class="legend">' + keys.map(function (k) {
+        return '<button class="seg" data-how="' + esc(k) + '" aria-pressed="false" style="--c:' + HOW_COLOR[k] + '" title="' + pct(k) + '% of all signatures">' +
+          '<i></i><b>' + counts[k] + '</b>' + (k === 'TTM' ? '<span class="l-long">through the mail</span><span class="l-short">TTM</span>' : HOW_LABEL[k].toLowerCase()) + '</button>';
+      }).join('') + '</div>';
+    prov.hidden = false;
+    $$('#provenance .seg').forEach(function (b) {
+      b.addEventListener('click', function () { state.how = state.how === b.dataset.how ? '' : b.dataset.how; render(); });
+    });
+  }
+
+  /* ---------- Filters ---------- */
+  function fillSelect(sel, label, values) {
+    sel.innerHTML = '<option value="">' + label + '</option>' + values.map(function (v) {
+      return '<option value="' + esc(v) + '">' + esc(v) + '</option>';
+    }).join('');
+  }
+  function buildFilters() {
+    const sigs = allSigs();
+    fillSelect($('#f-sport'), 'All sports', unique(sigs.map(function (s) { return s.sport; })));
+    fillSelect($('#f-type'), 'All types', unique(state.items.map(function (i) { return i.type; })));
+    $('#f-sport').value = state.sport;
+    $('#f-type').value = state.type;
+    fillSelect($('#f-usage'), 'Any usage', unique(state.items.map(function (i) { return i.usage; })));
+    $('#f-usage').value = state.usage;
+
+    const per = {};
+    state.items.forEach(function (it) {
+      unique(it.signatures.map(function (s) { return s.team; })).forEach(function (t) { per[t] = (per[t] || 0) + 1; });
+    });
+    const teams = Object.keys(per).sort(function (a, b) { return per[b] - per[a] || a.localeCompare(b); });
+    $('#teams').innerHTML = '<button class="team-chip all" data-team="" aria-pressed="true">All teams</button>' + teams.map(function (t) {
+      const info = teamInfo(t);
+      return '<button class="team-chip" data-team="' + esc(t) + '" aria-pressed="false" style="--c:' + info.color + '">' +
+        '<span class="dot" data-team="' + esc(t) + '">' + logoHtml(t) + '</span>' + esc(t) + ' <span class="k">' + per[t] + '</span></button>';
+    }).join('');
+    // Like every chip and legend entry: pressing the team already on goes back to All teams.
+    $$('#teams .team-chip').forEach(function (b) {
+      b.addEventListener('click', function () { state.team = state.team === b.dataset.team ? '' : b.dataset.team; render(); });
+    });
+  }
+
+  function matches(it) {
+    if (state.q) {
+      const terms = searchable(state.q).split(/\s+/).filter(Boolean);
+      if (!terms.every(function (t) { return it._text.indexOf(t) !== -1; })) return false;
+    }
+    if (state.type && it.type !== state.type) return false;
+    if (state.usage && it.usage !== state.usage) return false;
+    if (state.cert && !isCertified(it)) return false;
+    if (state.ins && !hasInscription(it)) return false;
+    if (state.sport || state.team || state.how) {
+      return it.signatures.some(function (s) {
+        return (!state.sport || s.sport === state.sport) && (!state.team || s.team === state.team) && (!state.how || s.how === state.how);
+      });
+    }
+    return true;
+  }
+  function sorter(a, b) {
+    switch (state.sort) {
+      case 'old': return a._first.localeCompare(b._first) || a.id.localeCompare(b.id);
+      case 'az': return a.signatures[0].signer.localeCompare(b.signatures[0].signer);
+      case 'most': return b.signatures.length - a.signatures.length || b._last.localeCompare(a._last);
+      default: return b._last.localeCompare(a._last) || b.id.localeCompare(a.id);
+    }
+  }
+
+  /* ---------- Grid ---------- */
+  function mediaHtml(item, opts) {
+    opts = opts || {};
+    const color = teamInfo(primaryTeam(item)).color;
+    const has = item.photos.length > 0;
+    const ph = photoFrame('<span class="initials">' + esc(initials(item.signatures[0].signer)) + '</span>', has);
+    const img = has
+      ? '<img hidden data-pid="' + esc(item.photos[opts.photo || 0]) + '" data-w="' + (opts.w || (opts.big ? 'fit' : CARD_W)) + '"' + (opts.eager ? ' data-eager="1"' : '') +
+        ' alt="' + esc(title(item) + ' signed by ' + signerLine(item)) + '">'
+      : '';
+    return '<div class="media" style="--c:' + color + '">' + ph + img + (opts.extra || '') + '</div>';
+  }
+
+  function howPills(item) {
+    return unique(item.signatures.map(function (s) { return s.how; })).map(function (h) {
+      return '<span class="how" style="--hc:' + (HOW_COLOR[h] || 'var(--purchased)') + '"><i></i>' + esc(HOW_LABEL[h] || h) + '</span>';
+    }).join('');
+  }
+
+  function render(keepScroll) {
+    state.view = state.items.filter(matches).sort(sorter);
+    if (!keepScroll && state.revealed) {
+      const main = $('#am-main');
+      const bar = $('#toolbar').offsetHeight;
+      const top = main.getBoundingClientRect().top + window.scrollY - bar;
+      if (window.scrollY > top) window.scrollTo({ top: top, behavior: 'smooth' });
+    }
+    const grid = $('#grid');
+    grid.className = 'grid' + (state.revealed ? '' : ' reveal');
+
+    const active = state.q || state.sport || state.team || state.type || state.how || state.usage || state.cert || state.ins;
+    $('#clear').hidden = !active;
+    $('#count').innerHTML = active
+      ? 'Showing <b>' + state.view.length + '</b> of ' + state.items.length + ' items'
+      : '<b>' + state.items.length + '</b> items';
+    $('#f-sport').classList.toggle('on', !!state.sport);
+    $('#f-type').classList.toggle('on', !!state.type);
+    $('#f-usage').classList.toggle('on', !!state.usage);
+    $('#f-cert').setAttribute('aria-pressed', state.cert);
+    $('#f-ins').setAttribute('aria-pressed', state.ins);
+    const nf = [state.sport, state.type, state.usage, state.cert, state.ins].filter(Boolean).length;
+    $('#filters-n').textContent = nf;
+    $('#filters-n').hidden = !nf;
+    $('#filters-btn').classList.toggle('on', nf > 0);
+    $$('#provenance .seg').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.how === state.how); });
+    $('#provenance').classList.toggle('filtered', !!state.how);
+    $$('#provenance .pbar span').forEach(function (s) { s.classList.toggle('on', s.dataset.how === state.how); });
+    $$('#teams .team-chip').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.team === state.team); });
+
+    if (!state.view.length) {
+      grid.innerHTML = emptyHtml('clear');
+      return;
+    }
+
+    grid.innerHTML = state.view.map(function (it, i) {
+      const ins = it.signatures.filter(function (s) { return s.inscription; })[0];
+      const badges = [];
+      // The usage tag carries the item's own video; Photo matched comes from Game Used, so it shows only there and in the panel.
+      if (it.usage) badges.push(usageBadge(it.usage, it.video ? [[ICON_PLAY, 'Video']] : []));
+      if (it.signatures.length > 1) badges.push('<span class="badge count" title="' + it.signatures.length + ' signatures" aria-label="' + it.signatures.length + ' signatures">' + SIGN + it.signatures.length + '</span>');
+      const snap = it.photos.length ? '' :
+        '<div class="snap-zone"><button class="snap" data-add="' + esc(it.id) + '" aria-label="Add a photo of ' + esc(it.id) + '">' + CAMERA + '<span>Add photo</span></button></div>';
+      return '<div class="cell" data-cell="' + esc(it.id) + '" style="--i:' + Math.min(i, 20) + '"><button class="card" data-id="' + esc(it.id) + '">' +
+        mediaHtml(it, { eager: i < 8, extra: (badges.length ? '<div class="badges">' + badges.join('') + '</div>' : '') +
+          crestHtml(it.signatures.map(function (s) { return s.team; }), it.signatures.map(function (s) { return s.sport; })) }) +
+        '<div class="body"><span class="id">' + esc(eyebrow([it.id, itemYear(it)])) + '</span>' +
+        '<span class="who">' + esc(signerLine(it)) + '</span>' +
+        '<span class="what">' + esc(title(it)) + '</span>' +
+        (ins ? '<span class="ins" title="' + esc(ins.inscription) + '"><span class="sr">Inscription: </span>' + QUOTES + '<span class="t">' + esc(ins.inscription) + '</span></span>' : '') +
+        '<div class="foot">' + howPills(it) + '</div></div></button>' + snap + '</div>';
+    }).join('');
+    hydrate(grid);
+    state.revealed = true;
+  }
+
+  /* ---------- Detail ---------- */
+  function openItem(id) {
+    const item = state.items.find(function (i) { return i.id === id; });
+    if (!item) return;
+    state.currentId = id;
+
+    const sigs = sigsByDate(item);
+    const teams = unique(sigs.map(function (s) { return s.team; }));
+
+    // The same object in Game Used, after the signatures ("Also in …"): a game-used item with its game.
+    const gu = guForItem(item.id);
+    const also = gu ? ['Game Used', linkRow('game-used/' + gu.id, guMedia(gu, { eager: true, noBadge: true, w: ROW_W }), guName(gu) + (guGame(gu) ? ' ' + guGame(gu) : ''),
+        eyebrow([gu.id, gu.detail, gu.date ? fmtDate(gu.date) : gu.season || gu.usage]))] : null;
+    const view = also ? '<h3>Also in ' + also[0] + '</h3><ul class="mh-signed">' + also[1] + '</ul>' : '';
+
+    // Each card: inscription, then a gray icon per fact: certificate (the seal), where it came
+    // from (a pin; a purchase adds its price: "eBay for $38.75") and who gave it. A gift's reference value stays in
+    // the spreadsheet: a price on a present is not what the card is about.
+    const sigHtml = sigs.map(function (s, n) {
+      const rows = [];
+      const price = n === 0 && item.price != null && s.how === 'Purchased' ? money(item.price) : '';
+      const row = function (html) { rows.push('<div class="row">' + html + '</div>'); };
+      if (s.autoAuth || s.autoCert) row(factHtml(ICON_CERT, 'Certified by', esc([s.autoAuth, s.autoCert].filter(Boolean).join(' '))));
+      if (s.at) row(placeHtml(s.at, price ? ' for <b>' + esc(price) + '</b>' : ''));
+      else if (price) row(factHtml(ICON_BUY, 'Bought for', esc(price))); // a price with no place: the bag, as every purchase
+      if (s.giftedBy) row(factHtml(ICON_GIFT, 'Gift from', esc(s.giftedBy)));
+      if (s.notes) rows.push(noteHtml(s.notes));
+      if (/^https?:\/\//i.test(s.instagram)) rows.push('<div class="row">' + instaLink(esc(s.instagram), 'View on Instagram') + '</div>');
+      return '<li class="sig"><div>' +
+        '<div class="name">' + esc(s.signer) + '<span class="how" style="--hc:' + (HOW_COLOR[s.how] || 'var(--purchased)') + '"><i></i>' + esc(HOW_LABEL[s.how] || s.how) + '</span></div>' +
+        '<div class="when">' + esc(fmtDate(s.date)) + (s.team && teams.length > 1 ? ' · ' + esc(s.team) : '') + '</div></div>' +
+        '<div class="rest">' + (s.inscription ? '<span class="ins"><span class="sr">Inscription: </span>' + QUOTES + '<span class="t">' + esc(s.inscription) + '</span></span>' : '') + rows.join('') + '</div></li>';
+    }).join('');
+
+    // Thumbnails only with something to move between (two photos, or a photo and the video). With the video alone it
+    // fills the photo area, and the camera sits at its corner as on a photo; with nothing, "Add photo".
+    const thumbs = (item.photos.length + (item.video ? 1 : 0) > 1 ? thumbsHtml(item.photos, videoTile(item.video)) : '') +
+      (item.photos.length || item.video ? '' : stageAdd(item.id));
+    openPanel({
+      noun: 'item',
+      pos: state.view.findIndex(function (i) { return i.id === id; }),
+      total: state.view.length,
+      color: teamInfo(primaryTeam(item)).color,
+      media: mediaHtml(item, { eager: true, big: true, extra: thumbs }),
+      // The signatures lead here: the item gets only what tells what it is (detail in the line above, usage tag,
+      // the certificate and photo match lines); its details are an "Also in …" card away, after the signatures.
+      info: '<span class="id">' + esc(eyebrow([item.id, itemYear(item), item.detail])) + '</span>' +
+        '<h2 id="d-title">' + esc(title(item)) + '</h2>' +
+        '<div class="team-tags">' + (teams.length ? teams.map(function (t) {
+          return '<span class="team-tag" style="--c:' + teamInfo(t).color + '"><span class="dot" data-team="' + esc(t) + '">' + logoHtml(t) + '</span>' + esc(t) + '</span>';
+        }).join('') : unique(sigs.map(function (s) { return s.sport; })).map(sportTagHtml).join('')) + usageTag(item.usage) + '</div>' +
+        certLine('Item authenticated by', item.itemAuth, item.itemCert) +
+        matchedLine(gu && gu.photoMatched) +
+        signedHeading(sigs.map(function (s) { return s.signer; })) +
+        '<ol class="sigs">' + sigHtml + '</ol>' +
+        (view ? '<div class="also">' + view + '</div>' : '') +
+        relatedHtml(item, sigs),
+      photos: item.photos,
+      video: item.video,
+      add: item.photos.length || item.video ? { key: item.id, label: item.photos.length ? 'Add another photo' : 'Add photo' } : null,
+      step: step
+    });
+  }
+
+  // Last in the panel (after "Also in …"): the other items each signer signed, newest first ("More from …").
+  function relatedHtml(item, sigs) {
+    let out = '';
+    sigs.map(function (s) { return s.signer; }).filter(function (n, i, all) { return n && all.indexOf(n) === i; }).forEach(function (name) {
+      const others = [];
+      state.items.forEach(function (it) {
+        if (it.id === item.id) return;
+        const s = it.signatures.find(function (x) { return x.signer === name; });
+        if (s) others.push({ it: it, date: s.date || '' });
+      });
+      if (!others.length) return;
+      others.sort(function (a, b) { return b.date.localeCompare(a.date); });
+      out += '<h3 class="section">More from ' + esc(name) + '</h3><ul class="mh-signed">' + others.map(function (o) {
+        return linkRow(o.it.id, mediaHtml(o.it, { w: ROW_W }), title(o.it) || o.it.id, eyebrow([o.it.detail, o.it.id, fmtDate(o.date)]));
+      }).join('') + '</ul>';
+    });
+    return out;
+  }
+
+  function step(dir) {
+    const pos = state.view.findIndex(function (i) { return i.id === state.currentId; });
+    if (pos < 0) return; // opened from a link, not from the list on screen
+    const next = state.view[pos + dir];
+    if (next) go(next.id, true);
+  }
+</script>

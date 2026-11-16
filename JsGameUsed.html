@@ -1,0 +1,365 @@
+<script>
+  'use strict';
+
+  /* JsGameUsed.html: the Game Used Memorabilia screen and item panel.
+     One card per object used in a game (or team issued, practice used), signed or not. A signed one is also an
+     item in Autographed Memorabilia (Signed column): who signed it and its photos come from there, and each panel
+     links to the other. The game is told as it was on the day: teams and stadium by their names then, the score
+     away - home, and the result for the item's team (W, L or D). */
+
+  // Sport icons, light weight (Phosphor baseball, football, soccer-ball, basketball, hockey, boxing-glove): items
+  // with no photo yet. A sport that is not here gets a medal, as in sportIcon.
+  const GU_ICONS = {
+    Baseball: '<path d="M128,26A102,102,0,1,0,230,128,102.12,102.12,0,0,0,128,26Zm67.31,161.67c-1-1.12-2-2.26-2.9-3.42a6,6,0,0,0-9.36,7.5c1.19,1.49,2.43,2.94,3.71,4.37a89.84,89.84,0,0,1-117.52,0c1.28-1.43,2.52-2.88,3.71-4.37a6,6,0,0,0-9.36-7.5c-.93,1.16-1.91,2.3-2.9,3.42a89.8,89.8,0,0,1,0-119.34c1,1.12,2,2.26,2.9,3.42A6,6,0,0,0,68.28,74,6,6,0,0,0,73,64.25c-1.19-1.49-2.43-2.94-3.71-4.37a89.84,89.84,0,0,1,117.52,0c-1.28,1.43-2.52,2.88-3.71,4.37a6,6,0,1,0,9.36,7.5c.93-1.16,1.91-2.3,2.9-3.42a89.8,89.8,0,0,1,0,119.34ZM93.92,145a101.43,101.43,0,0,1-4.4,17,6,6,0,1,1-11.31-4,89.91,89.91,0,0,0,3.87-15,6,6,0,1,1,11.84,2Zm0-34A6,6,0,0,1,89,117.92a6.74,6.74,0,0,1-1,.08,6,6,0,0,1-5.91-5,89.91,89.91,0,0,0-3.87-15,6,6,0,1,1,11.31-4A101.43,101.43,0,0,1,93.92,111Zm83.87,47a6,6,0,1,1-11.31,4,101.43,101.43,0,0,1-4.4-17,6,6,0,1,1,11.84-2A89.91,89.91,0,0,0,177.79,158Zm0-60a89.91,89.91,0,0,0-3.87,15,6,6,0,0,1-5.91,5,6.74,6.74,0,0,1-1-.08,6,6,0,0,1-4.93-6.91,101.43,101.43,0,0,1,4.4-17,6,6,0,1,1,11.31,4Z"/>',
+    Football: '<path d="M227.09,54.22a30.92,30.92,0,0,0-25.31-25.31c-32-5.42-92.28-7.91-136.53,36.34S23.49,169.78,28.91,201.78a30.92,30.92,0,0,0,25.31,25.31,205,205,0,0,0,34,2.91c31.69,0,71.12-7.88,102.49-39.25C235,146.5,232.51,86.22,227.09,54.22ZM167.44,37.9a194,194,0,0,1,32.33,2.83,18.93,18.93,0,0,1,15.5,15.5,187,187,0,0,1,2.6,41.21l-59.31-59.3C161.45,38,164.4,37.9,167.44,37.9ZM56.23,215.27a18.93,18.93,0,0,1-15.5-15.5,187,187,0,0,1-2.6-41.21l59.31,59.31A187,187,0,0,1,56.23,215.27Zm126-33c-11.92,11.91-34.24,28.54-69.46,34L39.72,143.19c5.47-35.22,22.1-57.54,34-69.46S108,45.2,143.2,39.73l73.08,73.08C210.81,148,194.18,170.35,182.27,182.27ZM164.22,91.78a6,6,0,0,1,0,8.48L148.48,116l7.75,7.75a6,6,0,1,1-8.48,8.48L140,124.49,124.49,140l7.75,7.76a6,6,0,1,1-8.48,8.48L116,148.48l-15.75,15.74a6,6,0,1,1-8.48-8.48L107.52,140l-7.75-7.75a6,6,0,1,1,8.48-8.48l7.76,7.75,15.5-15.5-7.75-7.76a6,6,0,1,1,8.48-8.48l7.75,7.75,15.75-15.74A6,6,0,0,1,164.22,91.78Z"/>',
+    Soccer: '<path d="M128,26A102,102,0,1,0,230,128,102.12,102.12,0,0,0,128,26Zm77.67,147.42H169.89L159.41,159l13.29-38.72,17-5.51,27.94,21.43A89.38,89.38,0,0,1,205.67,173.42Zm-119.56,0H50.33A89.38,89.38,0,0,1,38.38,136.2l27.94-21.43,17,5.51L96.59,159ZM51,81.42l7.24,24.41-20,15.34A89.47,89.47,0,0,1,51,81.42ZM107.56,154,95.15,117.86,128,95.28l32.85,22.58L148.44,154Zm90.19-48.17L205,81.42a89.47,89.47,0,0,1,12.75,39.75Zm-1.66-36.62L186,103.35l-17,5.53-35-24V67.16l30.9-21.24A90.3,90.3,0,0,1,196.09,69.21ZM150.92,41,128,56.72,105.08,41a90.22,90.22,0,0,1,45.84,0ZM91.11,45.91,122,67.16V84.84l-35,24-17-5.53L59.91,69.21A90.4,90.4,0,0,1,91.11,45.91ZM58.75,185.42H84.93l9.19,26A90.37,90.37,0,0,1,58.75,185.42Zm49.68,30.43L95.88,180.39,106.34,166h43.32l10.46,14.39-12.55,35.46a90.14,90.14,0,0,1-39.14,0Zm53.45-4.48,9.19-26h26.18A90.37,90.37,0,0,1,161.88,211.37Z"/>',
+    Basketball: '<path d="M128,26A102,102,0,1,0,230,128,102.12,102.12,0,0,0,128,26ZM60,69.09A89.23,89.23,0,0,1,81.78,122H38.2A89.65,89.65,0,0,1,60,69.09ZM38.2,134H81.78A89.23,89.23,0,0,1,60,186.91,89.65,89.65,0,0,1,38.2,134ZM122,217.8a89.66,89.66,0,0,1-53.5-22.34A101.18,101.18,0,0,0,93.82,134H122Zm0-95.8H93.82A101.18,101.18,0,0,0,68.5,60.54,89.66,89.66,0,0,1,122,38.2Zm95.8,0H174.22A89.23,89.23,0,0,1,196,69.09,89.65,89.65,0,0,1,217.8,122ZM134,38.2a89.66,89.66,0,0,1,53.5,22.34A101.18,101.18,0,0,0,162.18,122H134Zm0,179.6V134h28.18a101.18,101.18,0,0,0,25.32,61.46A89.66,89.66,0,0,1,134,217.8Zm62-30.89A89.23,89.23,0,0,1,174.22,134H217.8A89.65,89.65,0,0,1,196,186.91Z"/>',
+    Hockey: '<path d="M224,154H130L36.57,44.12a6,6,0,1,0-9.14,7.77L161,209.07A14,14,0,0,0,171.7,214H224a14,14,0,0,0,14-14V168A14,14,0,0,0,224,154Zm-53.82,47.3-30-35.3H194v36H171.7A2,2,0,0,1,170.18,201.3ZM226,200a2,2,0,0,1-2,2H206V166h18a2,2,0,0,1,2,2ZM110.89,181.08a6,6,0,0,0-8.46.68L85.82,201.3a2,2,0,0,1-1.52.7H62V166H85.2a6,6,0,0,0,0-12H32a14,14,0,0,0-14,14v32a14,14,0,0,0,14,14H84.3A14,14,0,0,0,95,209.07l16.6-19.54A6,6,0,0,0,110.89,181.08ZM30,200V168a2,2,0,0,1,2-2H50v36H32A2,2,0,0,1,30,200Zm121.43-75.88,68-80a6,6,0,1,1,9.14,7.77l-68,80a6,6,0,0,1-9.14-7.77Z"/>',
+    Boxing: '<path d="M168,18H120A54.06,54.06,0,0,0,66,72v2H56a30,30,0,0,0-30,30v29.19a14,14,0,0,0,3.07,8.75,5.66,5.66,0,0,0,.47.52l36.46,36V216a14,14,0,0,0,14,14H192a14,14,0,0,0,14-14V176.84l15.46-54.11a13.93,13.93,0,0,0,.54-3.85V72A54.06,54.06,0,0,0,168,18Zm42,100.88a2,2,0,0,1-.08.55l-15.69,54.92A6.14,6.14,0,0,0,194,176v40a2,2,0,0,1-2,2H80a2,2,0,0,1-2-2V176a6,6,0,0,0-1.78-4.27L38.3,134.25a2,2,0,0,1-.3-1.06V104A18,18,0,0,1,56,86H66v18a6,6,0,0,0,12,0V72a42,42,0,0,1,42-42h48a42,42,0,0,1,42,42Zm-39.32,46.49L149.42,176l21.26,10.63a6,6,0,0,1-5.36,10.74L136,182.71l-29.32,14.66a6,6,0,0,1-5.36-10.74L122.58,176l-21.26-10.63a6,6,0,0,1,5.36-10.74L136,169.29l29.32-14.66a6,6,0,1,1,5.36,10.74Z"/>'
+  };
+  const GU_ICON_OTHER = '<path d="M214,96A86,86,0,1,0,74,162.87V240a6,6,0,0,0,2.85,5.1A5.93,5.93,0,0,0,80,246a6,6,0,0,0,2.68-.63L128,222.71l45.33,22.66A6,6,0,0,0,182,240V162.87A85.87,85.87,0,0,0,214,96ZM54,96a74,74,0,1,1,74,74A74.09,74.09,0,0,1,54,96ZM170,230.29l-39.33-19.66a6,6,0,0,0-5.36,0L86,230.29V171a85.75,85.75,0,0,0,84,0ZM128,150A54,54,0,1,0,74,96,54.06,54.06,0,0,0,128,150Zm0-96A42,42,0,1,1,86,96,42,42,0,0,1,128,54Z"/>';
+  // The collection's icon on the home card (Phosphor trophy, light).
+  const GU_TROPHY = '<svg class="figure" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M232,66H206V48a6,6,0,0,0-6-6H56a6,6,0,0,0-6,6V66H24A14,14,0,0,0,10,80V96a38,38,0,0,0,38,38h5.14A78,78,0,0,0,122,189.75V218H96a6,6,0,0,0,0,12h64a6,6,0,0,0,0-12H134V189.75c32.44-2.52,59.43-25.3,68.62-55.75H208a38,38,0,0,0,38-38V80A14,14,0,0,0,232,66ZM48,122A26,26,0,0,1,22,96V80a2,2,0,0,1,2-2H50v34a80.87,80.87,0,0,0,.65,10Zm146-10.9c0,36.62-29.38,66.63-65.5,66.9A66,66,0,0,1,62,112V54H194ZM234,96a26,26,0,0,1-26,26h-2.77a78.45,78.45,0,0,0,.77-10.9V78h26a2,2,0,0,1,2,2Z"/></svg>';
+  function guIcon(sport) {
+    return '<svg class="figure" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">' + (GU_ICONS[sport] || GU_ICON_OTHER) + '</svg>';
+  }
+  // Interface icon, regular weight (Phosphor ticket): "I was there".
+  const ICON_TICKET = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M232,104a8,8,0,0,0,8-8V64a16,16,0,0,0-16-16H32A16,16,0,0,0,16,64V96a8,8,0,0,0,8,8,24,24,0,0,1,0,48,8,8,0,0,0-8,8v32a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V160a8,8,0,0,0-8-8,24,24,0,0,1,0-48ZM32,167.2a40,40,0,0,0,0-78.4V64H88V192H32Zm192,0V192H104V64H224V88.8a40,40,0,0,0,0,78.4Z"/></svg>';
+
+  const RESULT_LABEL = { W: 'Win', L: 'Loss', D: 'Tie' };
+  // The bar under the summary splits the collection in two, and its legend filters (as in the other collections).
+  // There is no goal of signing everything, so unsigned is a neutral tone, not "missing" gray.
+  const GU_STATES = [
+    { key: 'signed', label: 'signed', color: 'var(--signed)', test: function (g) { return g.signed.length > 0; } },
+    { key: 'unsigned', label: 'unsigned', color: 'color-mix(in srgb, var(--signed) 22%, #fff)', test: function (g) { return !g.signed.length; } }
+  ];
+  // What the Filters sheet narrows by, each list made from what the tab has (no list kept here).
+  const GU_SELECTS = [
+    { key: 'season', el: '#gu-f-season', all: 'All seasons', of: function (g) { return g.season; }, desc: true },
+    { key: 'sport', el: '#gu-f-sport', all: 'All sports', of: function (g) { return g.sport; } },
+    { key: 'type', el: '#gu-f-type', all: 'All types', of: function (g) { return g.type; } },
+    { key: 'usage', el: '#gu-f-usage', all: 'Any usage', of: function (g) { return g.usage; } },
+    { key: 'result', el: '#gu-f-result', all: 'Any result', of: function (g) { return RESULT_LABEL[g.result] || ''; }, order: Object.keys(RESULT_LABEL).map(function (k) { return RESULT_LABEL[k]; }) }
+  ];
+  const GU_TOGGLES = [
+    { key: 'attended', el: '#gu-f-attended', icon: ICON_TICKET, test: function (g) { return g.attended; } },
+    // Each carries the icon the cards show for it, so the sheet says what the icon means.
+    { key: 'video', el: '#gu-f-video', icon: ICON_PLAY, test: function (g) { return !!g.video; } },
+    { key: 'matched', el: '#gu-f-matched', icon: ICON_MATCH, test: function (g) { return g.photoMatched; } }
+  ];
+
+  function loadGu() {
+    if (!state.gu) $('#gu-grid').innerHTML = '<div class="grid">' + skelGrid(6) + '</div>';
+    const done = function (data) {
+      state.gu = data.items || [];
+      state.checks.gu = data.checks;
+      setMenuLinks([['sheet', '#gu-lnk-sheet'], ['photos', '#gu-lnk-photos']], data.links || {});
+      renderHub();
+      renderGu(true);
+      refreshPanel();
+      updateChecks();
+    };
+    const failed = function (err, shownKept) {
+      if (shownKept) return;
+      $('#gu-grid').innerHTML = '<div class="empty"><h2>The game used items didn’t load</h2><p>' + esc(err && err.message ? err.message : String(err)) + '</p></div>';
+    };
+    loadData('gu', 'getGameUsed', done, failed, window.SAMPLE_GU);
+  }
+  function guStats() {
+    const g = state.gu || [];
+    const signed = g.filter(function (x) { return x.signed.length; }).length;
+    return { total: g.length, signed: signed, unsigned: g.length - signed };
+  }
+  function findGu(id) { return (state.gu || []).find(function (g) { return g.id === id; }); }
+  // The game-used object an autographed item is (for "Also in Game Used").
+  function guForItem(id) { return (state.gu || []).find(function (g) { return g.signed.indexOf(id) !== -1; }); }
+  // Who signed it, first signed first (as everywhere: the order tells the item's story).
+  function guSigners(g) {
+    return g.signed.reduce(function (out, id) {
+      const it = amItem(id);
+      return it ? out.concat(it.signatures) : out;
+    }, []).sort(function (a, b) { return (a.date || '9999').localeCompare(b.date || '9999'); }).map(function (s) { return s.signer; });
+  }
+  // Its own photos (GU-0001.jpg, -2...), then every photo of each signed item from Autographed Memorabilia (it is
+  // the same object, so all its photos are photos of this one).
+  function guPhotos(g) {
+    const out = g.photos.slice();
+    g.signed.forEach(function (id) {
+      const it = amItem(id);
+      if (it) it.photos.forEach(function (p) { if (out.indexOf(p) === -1) out.push(p); });
+    });
+    return out;
+  }
+  // The game from the team's side: "vs Houston Astros" at home, "at San Francisco Giants" away.
+  function guGame(g) {
+    if (!g.away && !g.home) return '';
+    if (g.home === g.team) return 'vs ' + g.away;
+    if (g.away === g.team) return 'at ' + g.home;
+    return g.away + ' at ' + g.home;
+  }
+  // What it is: its type ("Baseball", "Pants"). The panel's title. Its variant (Item Detail: White, Color Rush) is a
+  // detail, so it never makes the name: it goes in the small line above it.
+  function guName(g) { return g.type || 'Item'; }
+  // The big line on a card: who signed it, else who used it, else the game ("vs Kansas City Royals"), else what it is.
+  function guWho(g) {
+    const signers = guSigners(g).filter(function (n, i, all) { return n && all.indexOf(n) === i; });
+    if (signers.length) return signers.length > 2 ? signers[0] + ' + ' + (signers.length - 1) + ' more' : signers.join(' & ');
+    return g.player || guGame(g) || guName(g);
+  }
+  // The year above a name: its Season, the year the list is sorted and filtered by (an NFL game in January belongs to
+  // the season before); the year of its game only when the Season is empty.
+  function guYear(g) { return g.season || (g.date || '').slice(0, 4); }
+  function resultHtml(g) {
+    return RESULT_LABEL[g.result] ? '<span class="result r-' + g.result.toLowerCase() + '">' + RESULT_LABEL[g.result] + '</span>' : '';
+  }
+  // Under a card, only the game: its result, with a ticket inside when he was there (as the usage tag carries its
+  // proof); the ticket alone when the game has no result. The panel says it in words.
+  function guTags(g) {
+    const label = RESULT_LABEL[g.result];
+    if (!g.attended) return resultHtml(g);
+    if (!label) return '<span class="gu-tag icon" title="I was there" aria-label="I was there">' + ICON_TICKET + '</span>';
+    return '<span class="result r-' + g.result.toLowerCase() + '" title="' + label + ', I was there" aria-label="' + label + ', I was there">' + label +
+      '<span class="proofs" aria-hidden="true">' + ICON_TICKET + '</span></span>';
+  }
+  // What proves the item, carried inside its usage tag on the photo: the video first, then the photo match (the
+  // order of the Show only filters).
+  function guProofs(g) {
+    return [g.video ? [ICON_PLAY, 'Video'] : null, g.photoMatched ? [ICON_MATCH, 'Photo matched'] : null].filter(Boolean);
+  }
+  function guMedia(g, opts) {
+    opts = opts || {};
+    const ph = guPhotos(g)[0];
+    const badges = [];
+    if (g.usage) badges.push(usageBadge(g.usage, guProofs(g)));
+    if (g.signed.length) badges.push('<span class="badge count sign-only" title="Signed" aria-label="Signed">' + SIGN + '</span>');
+    return '<div class="media" style="--c:' + teamInfo(g.team).color + '">' + photoFrame(guIcon(g.sport), !!ph) +
+      (ph ? '<img hidden data-pid="' + esc(ph) + '" data-w="' + (opts.w || (opts.big ? 'fit' : CARD_W)) + '"' + (opts.eager ? ' data-eager="1"' : '') + ' alt="' + esc(g.type) + '">' : '') +
+      (badges.length && !opts.noBadge ? '<div class="badges">' + badges.join('') + '</div>' : '') +
+      (opts.crest ? crestHtml([g.team], [g.sport]) : '') + (opts.extra || '') + '</div>';
+  }
+  function guView() {
+    const f = state.g, terms = searchable(f.q).split(/\s+/).filter(Boolean);
+    const state2 = GU_STATES.find(function (x) { return x.key === f.signed; });
+    const back = f.sort === 'old' ? -1 : 1;
+    return (state.gu || []).filter(function (g) {
+      if (f.team && g.team !== f.team) return false;
+      if (state2 && !state2.test(g)) return false;
+      if (GU_SELECTS.some(function (x) { return f[x.key] && x.of(g) !== f[x.key]; })) return false;
+      if (GU_TOGGLES.some(function (x) { return f[x.key] && !x.test(g); })) return false;
+      if (!terms.length) return true;
+      const text = searchable([g.id, g.type, g.detail, g.season, g.usage, g.sport, g.team, g.player, guYear(g), g.away, g.home, g.stadium, g.inning, g.atBat, g.pitching, g.play,
+        g.auth, g.cert, g.notes, g.at, guSigners(g).join(' '), g.signed.join(' ')].join(' '));
+      return terms.every(function (t) { return text.indexOf(t) !== -1; });
+    }).sort(function (a, b) {
+      // Newest season first (the Season column, filled for every item; a game in January of the NFL counts in the season
+      // before). In a season, newest game first, and an item with no game after its games, at the start of the season.
+      // An item with no season goes last, either way. Ties keep the tab's order. "Oldest first" turns the dates around.
+      if (!a.season !== !b.season) return a.season ? -1 : 1;
+      return back * ((b.season || '').localeCompare(a.season || '') || (b.date || '').localeCompare(a.date || '')) || a.order - b.order;
+    });
+  }
+  // How many of the sheet's filters are on (the number on the Filters button); the sort is not a filter.
+  function guSheetOn() {
+    return GU_SELECTS.concat(GU_TOGGLES).filter(function (x) { return state.g[x.key]; }).length;
+  }
+  function renderGu(keepScroll) {
+    if (!state.gu) return;
+    const st = guStats(), refocus = holdFocus(['#gu-chips', '#gu-progress']);
+    // As the other collections, the count and its breadth: the games its items come from (the date and both teams; an
+    // item with no game, like team-issued pants, counts only in the total). Signed and unsigned are the bar below.
+    const games = unique((state.gu || []).filter(function (g) { return g.date; }).map(function (g) { return [g.date, g.away, g.home].join('|'); })).length;
+    $('#gu-summary').innerHTML = '<b>' + st.total + (st.total === 1 ? ' item' : ' items') + '</b>' + (games ? ' from ' + games + (games === 1 ? ' game.' : ' games.') : '.');
+    $('#gu-progress').innerHTML = progressHtml(GU_STATES.map(function (f) { return [f.key, f.label, state.gu.filter(f.test).length, f.color]; }),
+      state.g.signed, 'data-gu-signed');
+    $('#gu-progress').classList.toggle('filtered', !!state.g.signed);
+    $('#gu-progress').hidden = false;
+    // Chips: the teams, as in Autographed Memorabilia (the team of an item is the one it belongs to in the collection).
+    const per = {};
+    state.gu.forEach(function (g) { if (g.team) per[g.team] = (per[g.team] || 0) + 1; });
+    const teams = Object.keys(per).sort(function (a, b) { return per[b] - per[a] || a.localeCompare(b); });
+    if (state.g.team && !per[state.g.team]) state.g.team = '';
+    $('#gu-chips').innerHTML = '<button class="team-chip all" data-gu-team="" aria-pressed="' + !state.g.team + '">All teams</button>' + teams.map(function (t) {
+      return '<button class="team-chip" data-gu-team="' + esc(t) + '" aria-pressed="' + (state.g.team === t) + '" style="--c:' + teamInfo(t).color + '">' +
+        '<span class="dot" data-team="' + esc(t) + '">' + logoHtml(t) + '</span>' + esc(t) + ' <span class="k">' + per[t] + '</span></button>';
+    }).join('');
+    refocus();
+    // The sheet: each list from the tab; a choice the tab no longer has is dropped.
+    GU_SELECTS.forEach(function (x) {
+      // In the alphabet, the seasons newest first, the results as a scoreboard reads them (win, loss, tie).
+      const vals = unique(state.gu.map(x.of).filter(Boolean)).sort(function (a, b) { return x.desc ? b.localeCompare(a) : x.order ? x.order.indexOf(a) - x.order.indexOf(b) : 0; });
+      if (state.g[x.key] && vals.indexOf(state.g[x.key]) === -1) state.g[x.key] = '';
+      fillSelect($(x.el), x.all, vals);
+      $(x.el).value = state.g[x.key];
+      $(x.el).classList.toggle('on', !!state.g[x.key]);
+    });
+    GU_TOGGLES.forEach(function (x) {
+      const el = $(x.el);
+      if (x.icon && !el.querySelector('svg')) el.insertAdjacentHTML('afterbegin', x.icon);
+      el.setAttribute('aria-pressed', state.g[x.key]); el.hidden = !state.gu.some(x.test);
+    });
+    $('#gu-sort').value = state.g.sort;
+    const nf = guSheetOn();
+    $('#gu-filters-n').textContent = nf; $('#gu-filters-n').hidden = !nf;
+    $('#gu-filters-btn').classList.toggle('on', nf > 0);
+    const list = guView();
+    state.guList = list;
+    const active = !!(state.g.q || state.g.team || state.g.signed || nf);
+    $('#gu-clear').hidden = !active;
+    $('#gu-count').innerHTML = active ? 'Showing <b>' + list.length + '</b> of ' + st.total + ' items' : '<b>' + st.total + '</b> items';
+    if (!keepScroll && state.screen === 'gu') {
+      const top = $('#gu-main').getBoundingClientRect().top + window.scrollY - $('#gu-toolbar').offsetHeight;
+      if (window.scrollY > top) window.scrollTo({ top: top, behavior: 'smooth' });
+    }
+    if (!list.length) {
+      $('#gu-grid').innerHTML = emptyHtml('gu-clear');
+      return;
+    }
+    $('#gu-grid').innerHTML = '<div class="grid">' + list.map(function (g, i) {
+      const who = guWho(g), game = guGame(g);
+      // Each part says one thing (the usage is on the photo). Above the name, always the ID, the year (the Season) and
+      // the type; when the type is the name, its variant instead ("GU-0057 · 2021 · White"). Under it, the game, each
+      // part on a line of its own so none breaks in the middle: the opponent, then the date; only the date when the
+      // opponent is the name; nothing with no game. The stadium is in the panel (and the search finds it).
+      const top = [g.id, guYear(g), who === guName(g) ? g.detail : g.type];
+      const line = [who === game ? '' : game, g.date ? fmtDate(g.date) : ''].filter(Boolean)
+        .map(function (x) { return '<span class="ln">' + esc(x) + '</span>'; }).join('');
+      const snap = guPhotos(g).length ? '' :
+        '<div class="snap-zone"><button class="snap" data-add="' + esc(g.id) + '" aria-label="Add a photo of ' + esc(g.id) + '">' + CAMERA + '<span>Add photo</span></button></div>';
+      return '<div class="cell" data-cell="' + esc(g.id) + '" style="--i:' + Math.min(i, 20) + '"><button class="card" data-gu="' + esc(g.id) + '">' +
+        guMedia(g, { eager: i < 8, crest: true }) +
+        '<div class="body"><span class="id">' + esc(eyebrow(top)) + '</span><span class="who">' + esc(who) + '</span>' +
+        '<span class="what">' + line + '</span><div class="marks gu-marks">' + guTags(g) + '</div></div></button>' + snap + '</div>';
+    }).join('') + '</div>';
+    hydrate($('#gu-grid'));
+  }
+
+  // The game as a small scoreboard: its result first (no "Final": every game here is over), then both teams with their
+  // score (the winner in bold), then date, stadium and "I was there". A team with no logo shows the item's sport icon
+  // on its color. A game with no result starts with the teams.
+  function scoreboardHtml(g) {
+    const m = (g.score || '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+    const a = m ? +m[1] : null, h = m ? +m[2] : null;
+    const row = function (team, runs, other) {
+      const logo = state.logos[team] ? '<img src="' + esc(state.logos[team]) + '" alt="">' : sportIcon(g.sport);
+      return '<div class="sb-row' + (runs != null && runs > other ? ' won' : '') + '"><span class="dot" data-team="' + esc(team) + '" style="--c:' + teamInfo(team).color + '">' + logo + '</span>' +
+        '<span class="sb-team">' + esc(team) + '</span><span class="sb-runs">' + (runs != null ? runs : '') + '</span></div>';
+    };
+    const meta = [g.date ? factHtml(ICON_DATE, 'Date', esc(fmtDate(g.date))) : '', g.stadium ? placeHtml(g.stadium, '', 'Stadium') : '',
+      g.attended ? factHtml(ICON_TICKET, '', 'I was there') : ''].filter(Boolean).join('');
+    const result = resultHtml(g);
+    return '<div class="scoreboard">' + (result ? '<div class="sb-head">' + result + '</div>' : '') +
+      (g.away ? row(g.away, a, h) : '') + (g.home ? row(g.home, h, a) : '') +
+      (meta ? '<div class="sb-meta">' + meta + '</div>' : '') + '</div>';
+  }
+  // A baseball's moment, laid out as MLB's authentication page lays it out (that page is the reference, and the
+  // sheet keeps its text word for word): the inning, then for each batter who is at bat, who is pitching and what
+  // happened, one line of the cell per bullet. Nothing in the text is interpreted: only the two marks the sheet
+  // itself uses are read, " / " between two batters of the same ball and a line break between two pitches.
+  function momentHtml(g) {
+    if (!g.inning && !g.atBat && !g.pitching && !g.play) return '';
+    // No inning and nobody at bat (a football play, a line written by hand): just the sentence, as text.
+    if (!g.inning && !g.atBat && !g.pitching) return '<div class="moment plain"><p>' + esc(g.play) + '</p></div>';
+    const parts = function (v) { return (v || '').split(' / ').map(function (x) { return x.trim(); }); };
+    const batters = parts(g.atBat), pitchers = parts(g.pitching);
+    // One batter: the whole cell is his, even when an older row wrote " / " between two pitches.
+    const plays = batters.length > 1 ? parts(g.play) : [g.play || ''];
+    const who = function (label, name) { return name ? '<div class="mo-who"><small>' + label + '</small><b>' + esc(name) + '</b></div>' : ''; };
+    const n = Math.max(batters.length, plays.length);
+    let out = '';
+    for (let i = 0; i < n; i++) {
+      const lines = (plays[i] || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+      out += '<div class="mo-ab">' + who('At Bat', batters[i]) + who('Pitching', pitchers[i] || pitchers[pitchers.length - 1]) +
+        (lines.length ? '<ul>' + lines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+    }
+    return '<div class="moment">' + (g.inning ? '<div class="mo-inning">' + esc(g.inning) + '</div>' : '') + out + '</div>';
+  }
+  function openGu(id) {
+    const g = findGu(id);
+    if (!g) return;
+    state.currentGu = id;
+    state.currentId = 'gu:' + id;
+    const list = state.guList || [];
+    const photos = guPhotos(g);
+    const color = teamInfo(g.team).color;
+    // The item leads here; its signatures come last, as the item it is in Autographed Memorabilia ("Also in …"):
+    // who signed it (signerNames) and when the first signed.
+    const signed = g.signed.map(function (sid) {
+      const it = amItem(sid);
+      if (!it) return missingRow(sid, color);
+      return linkRow(sid, mediaHtml(it, { eager: true, w: ROW_W }), signerNames(it), eyebrow([sid, signedWhen(it)]));
+    }).join('');
+
+    const when = boughtWhen(g.bought, g.price);
+    // The bag of every purchase line (nearly everything was bought); the word for screen readers stays "Obtained", as
+    // some came as a gift, a foul ball caught, a ball thrown from the warmups (the note right above says how).
+    const bought = (when ? factHtml(ICON_BUY, 'Obtained', esc(when)) : '') + (g.at ? placeHtml(g.at, '', 'Obtained at') : '');
+    // Thumbnails only with something to move between (two photos, or a photo and the video). With the video alone it
+    // fills the photo area, and the camera sits at its corner as on a photo; with nothing, "Add photo".
+    const thumbs = (photos.length + (g.video ? 1 : 0) > 1 ? thumbsHtml(photos, videoTile(g.video)) : '') + (photos.length || g.video ? '' : stageAdd(g.id));
+    openPanel({
+      noun: 'item',
+      pos: list.findIndex(function (x) { return x.id === id; }),
+      total: list.length,
+      color: color,
+      media: guMedia(g, { eager: true, big: true, noBadge: true, extra: thumbs }),
+      // The small line: ID, year (the Season) and the variant; the title is what it is.
+      info: '<span class="id">' + esc(eyebrow([g.id, guYear(g), g.detail])) + '</span>' +
+        '<h2 id="d-title">' + esc(guName(g)) + '</h2>' +
+        '<div class="team-tags">' + (g.team ? '<span class="team-tag" style="--c:' + color + '"><span class="dot" data-team="' + esc(g.team) + '">' + logoHtml(g.team) + '</span>' + esc(g.team) + '</span>' : sportTagHtml(g.sport)) + usageTag(g.usage) + '</div>' +
+        // The claim first (who used it), then what proves it (certificate, photo match).
+        lineHtml(ICON_PLAYER, g.usage === 'Team Issued' ? 'Issued to' : 'Used by', g.player, 'who') +
+        certLine('Authenticated by', g.auth, g.cert) +
+        matchedLine(g.photoMatched) +
+        (g.away || g.home ? scoreboardHtml(g) : '') + momentHtml(g) +
+        (g.notes ? noteHtml(g.notes) : '') +
+        (bought ? '<p class="bought">' + bought + '</p>' : '') +
+        (g.signed.length ? '<div class="also">' + ALSO_AM + '<ul class="mh-signed">' + signed + '</ul></div>' : ''),
+      photos: photos,
+      video: g.video,
+      add: photos.length || g.video ? { key: g.id, label: photos.length ? 'Add another photo' : 'Add photo' } : null,
+      step: stepGu
+    });
+  }
+  function stepGu(dir) {
+    const list = state.guList || [];
+    const pos = list.findIndex(function (x) { return x.id === state.currentGu; });
+    if (pos < 0) return;
+    const next = list[pos + dir];
+    if (next) go('game-used/' + next.id, true);
+  }
+  $('#gu-grid').addEventListener('click', function (e) {
+    const add = e.target.closest('[data-add]');
+    if (add) { startAdd(add.dataset.add); return; }
+    const card = e.target.closest('.card[data-gu]');
+    if (card) go('game-used/' + card.dataset.gu);
+  });
+  // Pressing the chip or legend entry already on goes back to all, as everywhere.
+  $('#gu-chips').addEventListener('click', function (e) {
+    const b = e.target.closest('[data-gu-team]');
+    if (!b) return;
+    state.g.team = state.g.team === b.dataset.guTeam ? '' : b.dataset.guTeam;
+    renderGu();
+  });
+  $('#gu-progress').addEventListener('click', function (e) {
+    const b = e.target.closest('[data-gu-signed]');
+    if (!b) return;
+    state.g.signed = state.g.signed === b.dataset.guSigned ? '' : b.dataset.guSigned;
+    renderGu();
+  });
+  GU_SELECTS.forEach(function (x) { $(x.el).addEventListener('change', function (e) { state.g[x.key] = e.target.value; renderGu(); }); });
+  GU_TOGGLES.forEach(function (x) { $(x.el).addEventListener('click', function () { state.g[x.key] = !state.g[x.key]; renderGu(); }); });
+  $('#gu-sort').addEventListener('change', function (e) { state.g.sort = e.target.value; renderGu(); });
+  // Reset in the sheet clears what the sheet holds (and the sort); the search, the team and the legend stay.
+  function guSheetReset() {
+    const keep = state.g;
+    state.g = Object.assign(guBlank(), { q: keep.q, team: keep.team, signed: keep.signed });
+    renderGu();
+  }
+  let guTimer;
+  $('#gu-q').addEventListener('input', function (e) {
+    clearTimeout(guTimer);
+    guTimer = setTimeout(function () { state.g.q = e.target.value.trim(); renderGu(); }, 120);
+  });
+  $('#gu-clear').addEventListener('click', function () { state.g = guBlank(); $('#gu-q').value = ''; renderGu(); });
+  $('#gu-reload').addEventListener('click', reloadAll);
+</script>

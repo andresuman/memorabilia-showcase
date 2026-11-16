@@ -1,0 +1,761 @@
+<script>
+  'use strict';
+  /* JsPanel.html: the detail panel shared by the collections (an autographed item, a game-used item):
+     its frame (previous / next / close), the photo area (thumbnails, swipe
+     between photos, blurred fill around photos that do not fill it) and the full-screen photo viewer.
+     Each collection builds its own photo and text, then calls openPanel(). */
+
+  const ICON_PREV = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"/></svg>';
+  const ICON_NEXT = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></svg>';
+  const ICON_BACK = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"/></svg>';
+  const ICON_PLAY = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></svg>';
+  const ICON_CLOSE = '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"/></svg>';
+
+  /* ---------- Panel ---------- */
+  // Thumbnails under the photo (ids = photo references from the server), with an optional tile at the end (the video).
+  function thumbsHtml(ids, extra) {
+    return '<div class="thumbs">' + ids.map(function (id, i) {
+      return '<button data-i="' + i + '" aria-label="Photo ' + (i + 1) + '"' + (i === 0 ? ' aria-current="true"' : '') + '><img hidden data-pid="' + esc(id) + '" data-w="' + ROW_W + '" data-eager="1" alt=""></button>';
+    }).join('') + (extra || '') + '</div>';
+  }
+  /* Adding a photo is an action on the photo: the camera in a white circle at the bottom right of the photo, as on
+     a card in the gallery, never among the thumbnails, which are only for moving between what there is to see
+     (shown with two or more photos, or with a video) and stop before it. With no photo yet, the "Add photo" button
+     sits in the same corner (stageAdd). key = an Item ID (see startAdd in JsApp). */
+  function addButton(key, label) {
+    return '<button class="photo-add" id="d-add" data-add="' + esc(key) + '" aria-label="' + esc(label) + '" title="' + esc(label) + '">' + CAMERA + '</button>';
+  }
+  // The video's thumbnail: a frame of the video (Drive's own thumbnail of it, asked like a photo) under a round play
+  // mark; until the frame arrives, or if Drive has none yet, the team color. Like a photo's thumbnail it shows its
+  // slide in the photo area (the last one, after the photos), where a tap plays it.
+  function videoTile(video) {
+    return video ? '<button class="video-tile" data-video="1" aria-label="Video of the play" title="Video of the play">' +
+      '<img hidden data-pid="' + esc(video.ref) + '" data-w="' + ROW_W + '" data-eager="1" alt=""><span class="play">' + ICON_PLAY + '</span></button>' : '';
+  }
+  function stageAdd(key) {
+    return '<button class="stage-add" data-add="' + esc(key) + '">' + CAMERA + '<span>Add photo</span></button>';
+  }
+
+  /* Opens the detail panel.
+     o.noun      "item" (button labels)
+     o.pos       position in the list on screen (-1 when opened from a link), o.total its length
+     o.color     team color behind the photo
+     o.media     the photo area: a .media element (photo, placeholder, badges, thumbnails or add button)
+     o.info      the text column
+     o.photos    the photo references (see photoRef_ in Code.gs) the photo area can show, in thumbnail order
+     o.onPhoto   optional, called with the index when the photo changes (e.g. to show or hide a badge)
+     o.video     optional, the video of the play ({ ref, size, pieces }): the last slide of the photo area, after the
+                 photos (its frame, with a play mark; a tap plays it), and the last thumbnail
+     o.add       optional, { key, label }: the camera at the bottom right of the photo, when there is already one
+     o.step      moves to the previous (-1) or next (1) panel of the list */
+  let panelStep = null;
+  /* Motion: only where it explains something. What the finger drags follows the finger (photos, pulling a panel
+     down); going into a linked panel and back slides the opposite ways. Short, easing out, and none at all with
+     the system's "Reduce motion". */
+  const MOVE_MS = 260, MOVE_EASE = 'cubic-bezier(.2,.8,.2,1)';
+  // The speed of a finger when it lifts, in px/ms along one axis, over its last 100 ms (as iOS reads a flick):
+  // an average since the touch began would call a slow drag that ends in a flick slow, and a fast start that
+  // then stops fast. FLICK is the speed that counts as a flick, with FLICK_MIN px of travel so a tap is not one.
+  const FLICK = 0.45, FLICK_MIN = 24;
+  function speedMeter() {
+    const pts = [];
+    return {
+      add: function (v) { const t = Date.now(); pts.push([t, v]); while (pts.length > 2 && t - pts[0][0] > 100) pts.shift(); },
+      get: function () {
+        if (pts.length < 2 || Date.now() - pts[pts.length - 1][0] > 100) return 0; // it stopped before lifting
+        const a = pts[0], b = pts[pts.length - 1];
+        return (b[1] - a[1]) / Math.max(1, b[0] - a[0]);
+      }
+    };
+  }
+  // Does a drag of d px that ends at speed v go on? Far enough (past `far`), or a flick the same way; a flick
+  // back the other way always cancels.
+  function dragGoes(d, v, far) {
+    if (v * d < 0 && Math.abs(v) > FLICK) return false;
+    return Math.abs(d) > far || (Math.abs(d) > FLICK_MIN && Math.abs(v) > FLICK);
+  }
+  function lessMotion() { return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  // The panel the back arrow returns to, named by its ID (for screen readers and the mouse tooltip).
+  function backLabel(hash) {
+    return hash.replace(/^game-used\//, '');
+  }
+  function openPanel(o) {
+    const noun = o.noun;
+    const from = state.trail.length ? state.trail[state.trail.length - 1] : null;
+    const wasOpen = $('#scrim').classList.contains('open');
+    // Previous / next only when the panel was opened from the list (not from another panel's link).
+    const inList = o.pos >= 0 && !from;
+    panelStep = inList ? o.step : null; // the keyboard arrows do what the ‹ › buttons do
+    $('#sheet').classList.toggle('has-back', !!from);
+    $('#sheet').innerHTML =
+      (from ? '<button class="round sheet-back" id="d-back" aria-label="Back to ' + esc(backLabel(from)) + '" title="Back to ' + esc(backLabel(from)) + '">' + ICON_BACK + '</button>' : '') +
+      '<div class="sheet-nav">' + (inList ? '<span class="pos">' + (o.pos + 1) + ' of ' + o.total + '</span>' +
+        '<button class="round" id="d-prev" aria-label="Previous ' + noun + '"' + (o.pos <= 0 ? ' disabled' : '') + '>' + ICON_PREV + '</button>' +
+        '<button class="round" id="d-next" aria-label="Next ' + noun + '"' + (o.pos >= o.total - 1 ? ' disabled' : '') + '>' + ICON_NEXT + '</button>' : '') +
+        '<button class="round" id="d-close" aria-label="Close">' + ICON_CLOSE + '</button>' +
+      '</div>' +
+      '<div class="sheet-grid"><div class="stage" id="d-stage" style="--c:' + o.color + '">' + o.media + '</div>' +
+      '<div class="info">' + o.info + '</div></div>';
+    if (o.add) {
+      const media = $('#d-stage .media');
+      media.classList.add('has-add');
+      media.insertAdjacentHTML('beforeend', addButton(o.add.key, o.add.label));
+    }
+    // Into a linked panel the new one comes from the right; back (arrow ←) it comes from the left.
+    if (wasOpen && state.navDir) $('#sheet .sheet-grid').classList.add(state.navDir > 0 ? 'from-right' : 'from-left');
+    state.navDir = 0; // once: a refresh of the same panel does not slide
+    if (inList) {
+      $('#d-prev').addEventListener('click', function () { o.step(-1); });
+      $('#d-next').addEventListener('click', function () { o.step(1); });
+    }
+    if (from) $('#d-back').addEventListener('click', function () { go(back()); });
+    $('#d-close').addEventListener('click', function () { go(listHash()); });
+    /* What the photo area moves between: the photos, then the video (its slide V shows its frame like a photo,
+       with a play mark over it; a tap plays it instead of opening the full-screen viewer). An item with only the
+       video opens on it. */
+    const photos = o.photos, video = o.video || null;
+    const V = video ? photos.length : -1;
+    const slides = video ? photos.concat([video.ref]) : photos;
+    let current = 0;
+    const media = $('#d-stage .media');
+    if (video && media) {
+      if (!photos.length) { // its frame where the photo would be, the placeholder waiting under it as for a photo
+        const ph = media.querySelector(':scope > .ph');
+        if (ph) ph.classList.add('loading');
+        const frame = '<img hidden data-pid="' + esc(video.ref) + '" data-w="fit" data-eager="1" alt="A frame of the video of the play">';
+        if (ph) ph.insertAdjacentHTML('afterend', frame); else media.insertAdjacentHTML('afterbegin', frame);
+      }
+      media.insertAdjacentHTML('beforeend', '<span class="slide-play" aria-hidden="true"><span class="play">' + ICON_PLAY + '</span></span>');
+    }
+    const play = media && media.querySelector(':scope > .slide-play');
+    const vt = $('#sheet .video-tile');
+    if (vt) { vt.dataset.i = V; vt.setAttribute('aria-current', 'false'); }
+    const img = $('#d-stage .media > img');
+    // The photos at the panel's size, each asked for once; the ones next to the shown one are fetched ahead,
+    // so a swipe never slides in an empty frame.
+    const srcs = {};
+    // A video Drive has no frame of yet slides in as the team color.
+    const noFrame = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="' + o.color + '"/></svg>');
+    function srcAt(i) {
+      if (srcs[i]) return srcs[i];
+      const p = loadPhoto(slides[i], panelPhotoWidth());
+      return (srcs[i] = i === V ? p.catch(function () { return noFrame; }) : p);
+    }
+    function preload() { [current - 1, current + 1].forEach(function (j) { if (j >= 0 && j < slides.length) srcAt(j); }); }
+    // The play mark rides on the video's slide, wherever it is (shown, or coming in beside the shown photo).
+    function placePlay(dx, t) {
+      if (!play) return;
+      const at = current === V ? 0 : ghost && ghostI === V ? ghostDir * media.clientWidth : null;
+      play.hidden = at === null;
+      play.style.transition = t || 'none';
+      play.style.transform = at === null || !(at + dx) ? '' : 'translateX(' + (at + dx) + 'px)';
+    }
+    // On the video's slide a tap plays it; on a photo it opens the photo full screen.
+    function stageMode() {
+      if (!media) return;
+      media.classList.toggle('on-video', current === V);
+      if (media.classList.contains('zoomable')) media.setAttribute('aria-label', current === V ? 'Watch the play' : 'Open the photo full screen');
+    }
+    function setCurrent(i) {
+      current = i;
+      if (o.onPhoto && i !== V) o.onPhoto(i);
+      placePlay(0);
+      stageMode();
+      $$('#sheet .thumbs button[data-i]').forEach(function (x) { x.setAttribute('aria-current', +x.dataset.i === i ? 'true' : 'false'); });
+      const tb = $('#sheet .thumbs button[data-i="' + i + '"]');
+      if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+      preload();
+    }
+    // The next or previous photo, waiting beside the shown one (dir 1 = on the right).
+    let ghost = null, ghostDir = 0, ghostI = -1;
+    function ghostAt(j, dir) {
+      if (j < 0 || j >= slides.length) { dropGhost(); return null; }
+      if (ghost && ghostI === j && ghostDir === dir) return ghost;
+      dropGhost();
+      const g = ghost = document.createElement('img');
+      g.className = 'slide-ghost'; g.alt = ''; ghostDir = dir; ghostI = j;
+      srcAt(j).then(function (src) { if (ghost === g) g.src = src; });
+      img.after(g);
+      return g;
+    }
+    function dropGhost() { if (ghost) ghost.remove(); ghost = null; ghostI = -1; placePlay(0); }
+    function track(dx, animate) {
+      const t = animate && !lessMotion() ? 'transform ' + MOVE_MS + 'ms ' + MOVE_EASE : 'none';
+      img.style.transition = t;
+      img.style.transform = dx ? 'translateX(' + dx + 'px)' : '';
+      if (ghost) { ghost.style.transition = t; ghost.style.transform = 'translateX(calc(' + (ghostDir * 100) + '% + ' + dx + 'px))'; }
+      placePlay(dx, t);
+    }
+    // Slides to photo j (its ghost is in place): the shown photo leaves, j takes its place.
+    function slideTo(j, dir) {
+      const g = ghost;
+      track(-dir * media.clientWidth, true);
+      setTimeout(function () {
+        if (g.src) img.src = g.src; else srcAt(j).then(function (src) { img.src = src; });
+        track(0, false);
+        dropGhost();
+        setCurrent(j);
+      }, lessMotion() ? 0 : MOVE_MS);
+    }
+    // Thumbnails and the full-screen viewer: show slide i (sliding from the side it is on, unless instant).
+    function showAt(i, instant) {
+      if (i < 0 || i >= slides.length || i === current || !img) return;
+      const dir = i > current ? 1 : -1;
+      if (instant || lessMotion()) { srcAt(i).then(function (src) { img.src = src; }); setCurrent(i); return; }
+      const g = ghostAt(i, dir);
+      track(0, false);
+      srcAt(i).then(function () { requestAnimationFrame(function () { if (ghost === g) slideTo(i, dir); }); });
+    }
+    $$('#sheet .thumbs button[data-i]').forEach(function (b) { b.addEventListener('click', function () { showAt(+b.dataset.i); }); });
+    // Swipe sideways on the photo: it follows the finger, with the next (or previous) one coming in beside it.
+    // Past a third of the width, or a quick flick, it goes on; otherwise it springs back. At the ends it resists.
+    let sw = null;
+    if (img) {
+      media.addEventListener('touchstart', function (e) {
+        if (e.touches.length !== 1 || e.target.closest('.thumbs, button')) { sw = null; return; }
+        const p = e.touches[0];
+        sw = { x: p.clientX, y: p.clientY, lock: null, dx: 0, sp: speedMeter() };
+      }, { passive: true });
+      media.addEventListener('touchmove', function (e) {
+        if (!sw) return;
+        const p = e.touches[0], dx = p.clientX - sw.x, dy = p.clientY - sw.y;
+        if (!sw.lock) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; sw.lock = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'; }
+        if (sw.lock !== 'x') return;
+        const dir = dx < 0 ? 1 : -1;
+        const g = ghostAt(current + dir, dir);
+        sw.dx = dx; sw.sp.add(dx);
+        track(g ? dx : dx * 0.3, false);
+      }, { passive: true });
+      const end = function () {
+        if (!sw || sw.lock !== 'x') { sw = null; return; }
+        const dx = sw.dx, v = sw.sp.get(), dir = dx < 0 ? 1 : -1;
+        sw = null;
+        if (ghost && dragGoes(dx, v, media.clientWidth / 3)) slideTo(current + dir, dir);
+        else { track(0, true); setTimeout(dropGhost, lessMotion() ? 0 : MOVE_MS); }
+      };
+      media.addEventListener('touchend', end, { passive: true });
+      media.addEventListener('touchcancel', end, { passive: true });
+    }
+    // Tap the photo to open it full screen (pinch to zoom); closing the viewer leaves the panel on that photo.
+    // Tap the video's slide to play it.
+    bindZoom(photos, function () { return current; }, function (i) { showAt(i, true); }, video);
+    stageMode();
+    placePlay(0);
+
+    const scrim = $('#scrim');
+    scrim.hidden = false; // before hydrate: the panel photo is sized to the photo area on screen
+    hydrate($('#sheet'));
+    if (img) preload(); // after the panel shows: the photo size is measured on screen
+    requestAnimationFrame(function () { scrim.classList.add('open'); });
+    scrim.scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+    $('#d-close').focus({ preventScroll: true });
+  }
+
+  // The keyboard arrows move like the panel's own previous / next buttons.
+  function stepPanel(dir) { if (panelStep) panelStep(dir); }
+
+  // For one moment, panels open and close with no fade or slide (see route: the browser's back and forward).
+  function still() {
+    const scrim = $('#scrim');
+    scrim.classList.add('still');
+    requestAnimationFrame(function () { requestAnimationFrame(function () { scrim.classList.remove('still'); }); });
+  }
+  function closePanel() {
+    closeVideo();
+    const scrim = $('#scrim');
+    scrim.classList.remove('open');
+    document.body.style.overflow = '';
+    const id = state.currentId;
+    state.currentId = null;
+    panelStep = null;
+    setTimeout(function () { if (!state.currentId) scrim.hidden = true; }, 320);
+    // Back to the card that opened it, for keyboard users (state.currentId: AM-0015, gu:GU-0001).
+    const m = id && String(id).match(/^gu:(.*)$/);
+    const attr = m ? 'data-gu' : 'data-id';
+    const card = id && document.querySelector('.card[' + attr + '="' + String(m ? m[1] : id).replace(/["\\]/g, '\\$&') + '"]');
+    if (card) card.focus({ preventScroll: true });
+  }
+
+  /* ---------- Photo area and full-screen viewer ----------
+     Photos that do not fill the photo area get a blurred copy of themselves behind them instead of plain bands.
+     Tap (or click) the photo to open it full screen. Pinch, double tap or the mouse wheel zooms;
+     drag moves a zoomed photo; swipe sideways changes photos; swipe down, X or Esc closes. */
+
+  const ZOOM_MAX = 5;
+  const ZOOM_W = 2048; // the photos are saved at 2000 px or a little more
+
+  const zoom = { open: false, ids: [], i: 0, s: 1, x: 0, y: 0, onClose: null };
+
+  function zoomEl() {
+    let el = $('#zoom');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'zoom';
+    el.className = 'zoom';
+    el.hidden = true;
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-label', 'Photo');
+    el.innerHTML =
+      '<div class="zoom-bar"><span class="zoom-pos"></span>' +
+        '<button class="round zoom-x" aria-label="Close photo">' + ICON_CLOSE + '</button></div>' +
+      '<div class="zoom-frame"><img class="zoom-img" alt="" draggable="false"></div>';
+    document.body.appendChild(el);
+    el.querySelector('.zoom-x').addEventListener('click', closeZoom);
+    zoomGestures(el);
+    return el;
+  }
+
+  // ids = the panel's photo IDs, at() = the slide on show, showAt(i) = makes the panel show photo i; video = the
+  // video of the play, whose slide comes after the photos (at() === ids.length): there a tap plays it.
+  function bindZoom(ids, at, showAt, video) {
+    const media = $('#d-stage .media');
+    if (!media || (!ids.length && !video)) return;
+    stageBackdrop(media);
+    media.classList.add('zoomable');
+    // Also a button for the keyboard (Tab to the photo, Enter or Space opens it).
+    media.tabIndex = 0;
+    media.setAttribute('role', 'button');
+    media.setAttribute('aria-label', 'Open the photo full screen');
+    const tap = function () { if (video && at() === ids.length) openVideo(video); else openZoom(ids, at(), showAt); };
+    media.addEventListener('click', function (e) {
+      if (e.target.closest('.thumbs, button, a')) return;
+      tap();
+    });
+    media.addEventListener('keydown', function (e) {
+      if (e.target !== media || (e.key !== 'Enter' && e.key !== ' ')) return;
+      e.preventDefault();
+      tap();
+    });
+  }
+
+  // Fills the space around a photo that does not fill the photo area (not square on a phone) with a
+  // blurred copy of the same photo. Photos that fill it get no blur (it would be hidden anyway).
+  function stageBackdrop(media) {
+    const img = media.querySelector(':scope > img');
+    if (!img) return;
+    // On a computer the photo column is taller than the photo area, so the blur fills the whole column.
+    const stage = media.parentNode;
+    function fill() {
+      if (!img.getAttribute('src') || !img.naturalWidth) return;
+      const fits = Math.abs(img.naturalWidth / img.naturalHeight - media.clientWidth / media.clientHeight) < 0.02 &&
+        stage.clientHeight <= media.clientHeight + 1;
+      stage.classList.toggle('backdrop', !fits);
+      if (!fits) stage.style.setProperty('--photo', 'url("' + img.src + '")');
+    }
+    img.addEventListener('load', fill);
+    if (img.complete) fill();
+  }
+
+  function openZoom(ids, i, onClose) {
+    const el = zoomEl();
+    Object.assign(zoom, { open: true, ids: ids, i: i, onClose: onClose });
+    el.hidden = false;
+    requestAnimationFrame(function () { if (zoom.open) el.classList.add('open'); }); // not if it closed within this frame
+    showZoom(i);
+    el.querySelector('.zoom-x').focus({ preventScroll: true });
+  }
+
+  function closeZoom() {
+    if (!zoom.open) return;
+    const el = zoomEl();
+    zoom.open = false;
+    el.classList.remove('open');
+    dropZoomGhost();
+    setTimeout(function () { if (!zoom.open) { el.hidden = true; el.style.background = ''; } }, 220);
+    if (zoom.onClose) zoom.onClose(zoom.i);
+    const media = $('#d-stage .media.zoomable');
+    if (media) media.focus({ preventScroll: true });
+  }
+
+  // start = a copy already on screen (the photo that just slid in), shown until the full-size one arrives.
+  function showZoom(i, start) {
+    const el = zoomEl();
+    zoom.i = i;
+    setZoom(1, 0, 0, false);
+    el.querySelector('.zoom-pos').textContent = zoom.ids.length > 1 ? (i + 1) + ' of ' + zoom.ids.length : '';
+    const img = el.querySelector('.zoom-img');
+    const pid = zoom.ids[i];
+    // The panel's copy (already loaded) first, then the full-size one.
+    const panelW = panelPhotoWidth();
+    if (start) img.src = start; else img.removeAttribute('src');
+    loadPhoto(pid, panelW).then(function (src) { if (zoom.ids[zoom.i] === pid && !img.dataset.full) img.src = src; });
+    delete img.dataset.full;
+    loadPhoto(pid, ZOOM_W).then(function (src) { if (zoom.ids[zoom.i] === pid) { img.src = src; img.dataset.full = '1'; } });
+  }
+
+  // The next or previous photo waiting beside the shown one, like in the panel (dir 1 = on the right).
+  let zGhost = null, zGhostDir = 0;
+  function zoomGhost(dir) {
+    const n = zoom.i + dir;
+    if (n < 0 || n >= zoom.ids.length) { dropZoomGhost(); return null; }
+    if (zGhost && zGhostDir === dir) return zGhost;
+    dropZoomGhost();
+    const g = zGhost = document.createElement('img');
+    g.className = 'zoom-img zoom-ghost'; g.alt = ''; g.draggable = false; zGhostDir = dir;
+    loadPhoto(zoom.ids[n], panelPhotoWidth()).then(function (src) { if (zGhost === g) g.src = src; });
+    zoomEl().querySelector('.zoom-frame').appendChild(g);
+    return g;
+  }
+  function dropZoomGhost() { if (zGhost) zGhost.remove(); zGhost = null; }
+  function zoomTrack(dx, animate) {
+    const t = animate && !lessMotion() ? 'transform ' + MOVE_MS + 'ms ' + MOVE_EASE : 'none';
+    const img = zoomEl().querySelector('.zoom-img:not(.zoom-ghost)');
+    zoom.s = 1; zoom.x = dx; zoom.y = 0;
+    img.style.transition = t;
+    img.style.transform = 'translate(' + dx + 'px,0) scale(1)';
+    if (zGhost) { zGhost.style.transition = t; zGhost.style.transform = 'translateX(' + (zGhostDir * window.innerWidth + dx) + 'px)'; }
+  }
+  function zoomSlide(dir) {
+    const g = zGhost, n = zoom.i + dir;
+    zoomTrack(-dir * window.innerWidth, true);
+    setTimeout(function () { const start = g && g.src; dropZoomGhost(); showZoom(n, start); }, lessMotion() ? 0 : MOVE_MS);
+  }
+  // Arrow keys: slide to the next photo the same way a swipe does.
+  function stepZoom(d) {
+    const n = zoom.i + d;
+    if (n < 0 || n >= zoom.ids.length) return;
+    if (lessMotion() || zoom.s > 1.01) { showZoom(n); return; }
+    const g = zoomGhost(d);
+    loadPhoto(zoom.ids[n], panelPhotoWidth()).then(function () { requestAnimationFrame(function () { if (zGhost === g) zoomSlide(d); }); });
+  }
+
+  // Size of the photo as fitted on the screen (before zooming), to keep a zoomed photo from leaving the screen.
+  function fitted() {
+    const img = zoomEl().querySelector('.zoom-img');
+    const W = window.innerWidth, H = window.innerHeight;
+    const r = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1;
+    return W / H > r ? { w: H * r, h: H, W: W, H: H } : { w: W, h: W / r, W: W, H: H };
+  }
+  function clampPan(s, x, y) {
+    const f = fitted();
+    const mx = Math.max(0, (f.w * s - f.W) / 2), my = Math.max(0, (f.h * s - f.H) / 2);
+    return { x: Math.max(-mx, Math.min(mx, x)), y: Math.max(-my, Math.min(my, y)) };
+  }
+  function setZoom(s, x, y, animate) {
+    const img = zoomEl().querySelector('.zoom-img');
+    zoom.s = s; zoom.x = x; zoom.y = y;
+    img.style.transition = animate ? 'transform .22s ease' : 'none';
+    img.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + s + ')';
+    zoomEl().classList.toggle('zoomed', s > 1.01);
+  }
+  // Zoom to scale s keeping the screen point (px, py) still.
+  function zoomAt(s, px, py, animate) {
+    s = Math.max(1, Math.min(ZOOM_MAX, s));
+    const cx = px - window.innerWidth / 2, cy = py - window.innerHeight / 2;
+    const k = s / zoom.s;
+    const p = clampPan(s, cx - (cx - zoom.x) * k, cy - (cy - zoom.y) * k);
+    setZoom(s, p.x, p.y, animate);
+  }
+  function toggleZoom(px, py) {
+    if (zoom.s > 1.01) setZoom(1, 0, 0, true);
+    else zoomAt(2.5, px, py, true);
+  }
+
+  function zoomGestures(el) {
+    const frame = el.querySelector('.zoom-frame');
+    let t = null;           // current touch gesture
+    let lastTap = { at: 0, x: 0, y: 0 };
+    const dist = function (a, b) { return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); };
+    const mid = function (a, b) { return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 }; };
+
+    // iOS: keep the page itself from zooming while the viewer is open.
+    el.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+
+    frame.addEventListener('touchstart', function (e) {
+      e.preventDefault();
+      const a = e.touches[0], b = e.touches[1];
+      if (b) {
+        const m = mid(a, b);
+        t = { kind: 'pinch', d0: dist(a, b), s0: zoom.s, mx: m.x, my: m.y, x0: zoom.x, y0: zoom.y };
+      } else {
+        t = { kind: 'one', sx: a.clientX, sy: a.clientY, x0: zoom.x, y0: zoom.y, moved: false, spx: speedMeter(), spy: speedMeter() };
+      }
+    }, { passive: false });
+
+    frame.addEventListener('touchmove', function (e) {
+      e.preventDefault();
+      if (!t) return;
+      const a = e.touches[0], b = e.touches[1];
+      if (t.kind === 'pinch' && b) {
+        const s = Math.max(.85, Math.min(ZOOM_MAX, t.s0 * dist(a, b) / t.d0));
+        const m = mid(a, b);
+        const cx = t.mx - window.innerWidth / 2, cy = t.my - window.innerHeight / 2;
+        const k = s / t.s0;
+        setZoom(s, cx - (cx - t.x0) * k + (m.x - t.mx), cy - (cy - t.y0) * k + (m.y - t.my), false);
+        return;
+      }
+      if (t.kind !== 'one') return;
+      const dx = a.clientX - t.sx, dy = a.clientY - t.sy;
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) t.moved = true;
+      t.spx.add(dx); t.spy.add(dy);
+      if (zoom.s > 1.01) {
+        const p = clampPan(zoom.s, t.x0 + dx, t.y0 + dy);
+        setZoom(zoom.s, p.x, p.y, false);
+      } else if (dy > 0 && dy > Math.abs(dx)) {
+        // Pulling down at normal size: the photo follows the finger and the background fades.
+        t.down = dy;
+        setZoom(1, 0, dy, false);
+        el.style.background = 'rgba(0,0,0,' + Math.max(.35, 1 - dy / 400) + ')';
+      } else {
+        // Sideways at normal size: the photo follows the finger, the next one comes in beside it.
+        t.dx = dx;
+        const g = zoomGhost(dx < 0 ? 1 : -1);
+        zoomTrack(g ? dx : dx * 0.3, false);
+      }
+    }, { passive: false });
+
+    frame.addEventListener('touchend', function (e) {
+      if (!t) return;
+      if (t.kind === 'pinch') {
+        if (e.touches.length) return; // wait for the second finger to lift
+        if (zoom.s < 1.01) setZoom(1, 0, 0, true);
+        else { const p = clampPan(zoom.s, zoom.x, zoom.y); setZoom(zoom.s, p.x, p.y, true); }
+        t = null;
+        return;
+      }
+      const g = t; t = null;
+      el.style.background = '';
+      if (!g.moved) {
+        const c = e.changedTouches[0], now = Date.now();
+        if (now - lastTap.at < 300 && Math.hypot(c.clientX - lastTap.x, c.clientY - lastTap.y) < 30) {
+          toggleZoom(c.clientX, c.clientY);
+          lastTap.at = 0;
+        } else lastTap = { at: now, x: c.clientX, y: c.clientY };
+        return;
+      }
+      if (zoom.s > 1.01) return;
+      if (g.down && dragGoes(g.down, g.spy.get(), 110)) { closeZoom(); return; }
+      if (zGhost && g.dx && dragGoes(g.dx, g.spx.get(), window.innerWidth / 3)) { zoomSlide(g.dx < 0 ? 1 : -1); return; }
+      zoomTrack(0, true);
+      setTimeout(dropZoomGhost, lessMotion() ? 0 : MOVE_MS);
+    });
+    // The system took the touch (a call, a notification): everything back in place.
+    frame.addEventListener('touchcancel', function () {
+      if (!t) return;
+      t = null; el.style.background = '';
+      if (zoom.s <= 1.01) { setZoom(1, 0, 0, true); zoomTrack(0, true); setTimeout(dropZoomGhost, lessMotion() ? 0 : MOVE_MS); }
+    });
+
+    // Mouse: double click zooms, drag moves, wheel zooms around the pointer, click on the background closes.
+    let drag = null;
+    frame.addEventListener('dblclick', function (e) { toggleZoom(e.clientX, e.clientY); });
+    frame.addEventListener('mousedown', function (e) {
+      if (zoom.s <= 1.01) return;
+      e.preventDefault();
+      drag = { sx: e.clientX, sy: e.clientY, x0: zoom.x, y0: zoom.y };
+    });
+    window.addEventListener('mousemove', function (e) {
+      if (!drag) return;
+      const p = clampPan(zoom.s, drag.x0 + e.clientX - drag.sx, drag.y0 + e.clientY - drag.sy);
+      setZoom(zoom.s, p.x, p.y, false);
+    });
+    window.addEventListener('mouseup', function () { drag = null; });
+    frame.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      zoomAt(zoom.s * Math.exp(-e.deltaY / 300), e.clientX, e.clientY, false);
+    }, { passive: false });
+    frame.addEventListener('click', function (e) {
+      if (e.target === frame && zoom.s <= 1.01 && !('ontouchstart' in window)) closeZoom();
+    });
+
+    // Keyboard, ahead of the panel's own keys (Esc would also close the panel).
+    document.addEventListener('keydown', function (e) {
+      if (!zoom.open) return;
+      if (e.key === 'Escape') closeZoom();
+      else if (e.key === 'ArrowRight') stepZoom(1);
+      else if (e.key === 'ArrowLeft') stepZoom(-1);
+      else return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }, true);
+  }
+
+  /* ---------- Video of the play ----------
+     A game-used ball can have the video of its play (see Code.gs, "Videos"). It is private in Drive, so it comes
+     through the script in pieces (getVideoChunk, a few at a time), is put back together as a video file in this
+     browser and kept there (IndexedDB "videos"): the second time it opens at once, even offline. A replaced video
+     has a new reference, so the old copy is never shown. It plays in its own full-screen layer with the
+     phone's own controls. Pulling down closes it, like the full-screen photo (the player keeps taps and the sideways
+     drag of its time bar); X or Esc closes it too. */
+  const videoCache = {};
+  function keptVideo(ref) {
+    return openPhotoDb().then(function (db) {
+      if (!db) return null;
+      return new Promise(function (resolve) {
+        try {
+          const req = db.transaction('videos').objectStore('videos').get(ref);
+          req.onsuccess = function () { resolve(req.result || null); };
+          req.onerror = function () { resolve(null); };
+        } catch (e) { resolve(null); }
+      });
+    });
+  }
+  function keepVideo(ref, blob) {
+    openPhotoDb().then(function (db) {
+      if (!db) return;
+      try {
+        const store = db.transaction('videos', 'readwrite').objectStore('videos');
+        // Only the current copy of each video: older references of the same file go.
+        const id = ref.split('~')[0];
+        store.getAllKeys().onsuccess = function (e) {
+          (e.target.result || []).forEach(function (k) { if (String(k).split('~')[0] === id && k !== ref) store.delete(k); });
+        };
+        store.put(blob, ref);
+      } catch (e) { /* not kept */ }
+    });
+  }
+  function videoPiece(ref, i) {
+    return new Promise(function (resolve, reject) {
+      google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getVideoChunk(ref, i);
+    });
+  }
+  function base64Bytes(b64) {
+    const bin = atob(b64), out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  // video = { ref, size, pieces } from the server. progress(0..1) while the pieces arrive. Resolves with a Blob.
+  function loadVideo(video, progress) {
+    if (videoCache[video.ref]) return videoCache[video.ref];
+    const p = videoCache[video.ref] = keptVideo(video.ref).then(function (kept) {
+      if (kept) return kept;
+      if (!(window.google && google.script && google.script.run)) return Promise.reject(new Error('The video needs the web app.'));
+      const n = video.pieces; // how many pieces the server has for it (the piece size is the server's business)
+      if (!(n > 0)) return Promise.reject(new Error('The video needs fresh data from the spreadsheet.'));
+      const parts = new Array(n);
+      let next = 0, done = 0;
+      function worker() {
+        if (next >= n) return Promise.resolve();
+        const i = next++;
+        return videoPiece(video.ref, i).then(function (b64) {
+          parts[i] = base64Bytes(b64);
+          progress(++done / n);
+          return worker();
+        });
+      }
+      return Promise.all([worker(), worker(), worker()]).then(function () {
+        const blob = new Blob(parts, { type: 'video/mp4' });
+        keepVideo(video.ref, blob);
+        return blob;
+      });
+    });
+    p.catch(function () { delete videoCache[video.ref]; });
+    return p;
+  }
+
+  let videoUrl = null, videoOpen = false;
+  let videoRef = null; // the video the player is open for: one still arriving for another item never lands in it
+  function videoEl() {
+    let el = $('#video');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'video';
+    el.className = 'zoom video-view';
+    el.hidden = true;
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-label', 'Video of the play');
+    el.innerHTML =
+      '<div class="zoom-bar"><span class="zoom-pos"></span>' +
+        '<button class="round zoom-x" aria-label="Close video">' + ICON_CLOSE + '</button></div>' +
+      '<div class="video-frame"><video controls playsinline preload="auto"></video>' +
+        '<div class="video-wait" role="status"><span class="video-ring"></span><span class="video-msg"></span>' +
+          '<button class="video-retry" type="button" hidden>Try again</button></div></div>';
+    document.body.appendChild(el);
+    el.querySelector('.zoom-x').addEventListener('click', closeVideo);
+    videoPull(el);
+    return el;
+  }
+  // Pull down to close: the video follows the finger and the black fades; past 110 px or a quick flick it closes,
+  // otherwise it springs back. Sideways and taps are left to the player.
+  function videoPull(el) {
+    const frame = el.querySelector('.video-frame');
+    let t = null;
+    function place(dy, animate) {
+      frame.style.transition = animate && !lessMotion() ? 'transform ' + MOVE_MS + 'ms ' + MOVE_EASE : 'none';
+      frame.style.transform = dy ? 'translateY(' + dy + 'px)' : '';
+      el.style.background = dy ? 'rgba(0,0,0,' + Math.max(.35, 1 - dy / 400) + ')' : '';
+    }
+    frame.addEventListener('touchstart', function (e) {
+      t = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: null, dy: 0, sp: speedMeter() } : null;
+    }, { passive: true });
+    frame.addEventListener('touchmove', function (e) {
+      if (!t) return;
+      const dx = e.touches[0].clientX - t.x, dy = e.touches[0].clientY - t.y;
+      if (!t.lock) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; t.lock = dy > Math.abs(dx) ? 'down' : 'other'; }
+      if (t.lock !== 'down') return;
+      t.dy = Math.max(0, dy); t.sp.add(dy);
+      place(t.dy, false);
+    }, { passive: true });
+    const end = function () {
+      if (!t || t.lock !== 'down') { t = null; return; }
+      const goes = dragGoes(t.dy, t.sp.get(), 110);
+      t = null;
+      if (goes) closeVideo();
+      else place(0, true);
+    };
+    frame.addEventListener('touchend', end, { passive: true });
+    frame.addEventListener('touchcancel', end, { passive: true });
+  }
+  function openVideo(video) {
+    const el = videoEl(), v = el.querySelector('video'), wait = el.querySelector('.video-wait'), msg = el.querySelector('.video-msg');
+    const retry = el.querySelector('.video-retry');
+    retry.hidden = true;
+    retry.onclick = function () { openVideo(video); };
+    videoOpen = true;
+    videoRef = video.ref;
+    const mine = function () { return videoOpen && videoRef === video.ref; };
+    v.hidden = true;
+    wait.hidden = false;
+    wait.classList.remove('failed');
+    msg.textContent = 'Loading the video…';
+    el.hidden = false;
+    requestAnimationFrame(function () { if (videoOpen) el.classList.add('open'); }); // not if it closed within this frame
+    el.querySelector('.zoom-x').focus({ preventScroll: true });
+    loadVideo(video, function (f) { if (mine()) msg.textContent = 'Loading the video… ' + Math.round(f * 100) + '%'; }).then(function (blob) {
+      if (!mine()) return;
+      if (videoUrl) URL.revokeObjectURL(videoUrl);
+      videoUrl = URL.createObjectURL(blob);
+      v.src = videoUrl;
+      v.hidden = false;
+      wait.hidden = true;
+      const play = v.play && v.play();
+      if (play && play.catch) play.catch(function () { /* the phone wants a tap on play first */ });
+    }, function () {
+      if (!mine()) return;
+      wait.classList.add('failed');
+      msg.textContent = 'The video could not load. Check the connection and try again.';
+      retry.hidden = false;
+      retry.focus({ preventScroll: true });
+    });
+  }
+  function closeVideo() {
+    if (!videoOpen) return;
+    const el = videoEl(), v = el.querySelector('video');
+    videoOpen = false;
+    v.pause();
+    el.classList.remove('open');
+    setTimeout(function () {
+      if (videoOpen) return;
+      el.hidden = true;
+      el.style.background = '';
+      const frame = el.querySelector('.video-frame');
+      frame.style.transition = 'none';
+      frame.style.transform = '';
+      v.removeAttribute('src');
+      v.load();
+      if (videoUrl) { URL.revokeObjectURL(videoUrl); videoUrl = null; }
+    }, 220);
+    const media = $('#d-stage .media.zoomable'); // the video's slide it was played from
+    if (media) media.focus({ preventScroll: true });
+  }
+  // Esc closes the video ahead of the panel (like the photo viewer).
+  document.addEventListener('keydown', function (e) {
+    if (!videoOpen || e.key !== 'Escape') return;
+    closeVideo();
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }, true);
+</script>

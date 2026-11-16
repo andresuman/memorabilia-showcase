@@ -1,0 +1,748 @@
+<style>
+  /* Styles.html: every style of the page (included by Index.html). */
+  /* Design tokens: use these instead of raw values, so the screens stay consistent. */
+  :root {
+    /* Surfaces and text */
+    --bg: #EEF0F3;
+    --surface: #FFFFFF;
+    --ink: #14161B;
+    --muted: #5C6574;
+    --line: #DFE3E8;
+    --accent: #2B59FF;      /* links and actions */
+    /* What colors mean, the same in every collection */
+    --signed: #2B59FF;      /* signed / autograph */
+    --have: #10A37F;        /* I have it / complete (In box, Sealed) */
+    --have-2: #0E8FA6;      /* a second "have" next to the first (Loose) */
+    --missing: #C9CFD8;     /* still missing */
+    /* How an autograph was obtained (Autographed Memorabilia only) */
+    --in-person: var(--signed);
+    --gift: #D97706;
+    --ttm: #8E5CF6;
+    --purchased: #A0A8B4;
+    /* Other states */
+    --gold: #FFD24A;        /* Game Used */
+    --warn: #E8A400; --warn-bg: #FFF4D6; --warn-ink: #6B4E00;
+    --danger: #B4232C;
+    --shade: rgba(20, 22, 27, .72); /* dark glass over photos */
+    /* Type: one scale (plus the big titles and numbers) */
+    --font: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --fs-xs: 12px; --fs-sm: 13px; --fs-base: 15px; --fs-md: 17px; --fs-lg: 22px; --fs-xl: 28px; --fs-2xl: 34px;
+    /* Corners */
+    --r-xs: 4px; --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-card: 22px; --r-xl: 28px; --r-pill: 999px;
+    /* Shadows */
+    --lift: 0 1px 2px rgba(20, 22, 27, .04), 0 6px 18px rgba(20, 22, 27, .06);
+    --lift-hi: 0 2px 6px rgba(20, 22, 27, .06), 0 22px 44px rgba(20, 22, 27, .14);
+    --float: 0 4px 14px rgba(0, 0, 0, .2);     /* controls over a photo */
+    --sheet: 0 30px 80px rgba(0, 0, 0, .25);   /* panels and bottom sheets */
+    /* Heights of controls */
+    --h-tag: 26px;   /* labels that are not buttons (marks, badges) */
+    --h-chip: 36px;  /* chips and small pills */
+    --h-btn: 44px;   /* buttons, search, round buttons */
+    --h-btn-lg: 48px;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink); font-family: var(--font);
+    font-size: var(--fs-base); line-height: 1.45; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums;
+    font-optical-sizing: auto;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+  .wrap { max-width: 1340px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
+
+  /* ---------- Hero ---------- */
+  .hero { padding-top: 46px; padding-bottom: 26px; }
+  .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+  .hero h1 {
+    margin: 0; font-weight: 800; font-size: clamp(46px, 8vw, 104px); line-height: .92; letter-spacing: -.035em;
+    font-variation-settings: "opsz" 96;
+  }
+  .hero p { margin: 16px 0 0; max-width: 58ch; color: var(--muted); font-size: var(--fs-md); }
+  .hero p b { color: var(--ink); font-weight: 600; }
+  .icon-btn {
+    flex: none; width: var(--h-btn); height: var(--h-btn); border-radius: 50%; border: 0; background: var(--surface);
+    box-shadow: var(--lift); display: grid; place-items: center; cursor: pointer; transition: transform .2s;
+  }
+  .icon-btn svg { width: 19px; height: 19px; }
+
+  .actions { position: relative; display: flex; gap: 10px; }
+  .icon-btn[aria-expanded="true"] { background: var(--ink); color: #fff; }
+  .menu {
+    position: absolute; top: 54px; right: 0; z-index: 30; width: 270px; padding: 8px; background: var(--surface);
+    border-radius: var(--r-lg); box-shadow: var(--lift-hi); transform-origin: top right;
+    opacity: 0; transform: translateY(-6px) scale(.97); visibility: hidden; transition: opacity .18s, transform .18s, visibility .18s;
+  }
+  .menu.open { opacity: 1; transform: none; visibility: visible; }
+  .menu a {
+    display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: center; padding: 10px; border-radius: var(--r-sm);
+    color: var(--ink); text-decoration: none;
+  }
+  .menu a:focus-visible { background: var(--bg); }
+  .menu .ic { width: 36px; height: 36px; border-radius: var(--r-sm); display: grid; place-items: center; background: color-mix(in srgb, var(--c) 12%, var(--surface)); color: var(--c); }
+  .menu .ic svg { width: 18px; height: 18px; }
+  .menu b { display: block; font-weight: 600; font-size: var(--fs-base); }
+  .menu small { display: block; color: var(--muted); font-size: var(--fs-xs); }
+  .menu .nowrap { white-space: nowrap; }
+  .menu a[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+
+  /* Provenance: proportional segmented control that filters */
+  .provenance { margin-top: 26px; max-width: 640px; }
+  .pbar { display: flex; gap: 3px; height: 6px; }
+  .pbar span { flex: var(--n) 1 0; min-width: 6px; border-radius: var(--r-xs); background: var(--c); transition: opacity .25s; }
+  .provenance.filtered .pbar span { opacity: .22; }
+  .provenance.filtered .pbar span.on { opacity: 1; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 12px; margin-left: -10px; }
+  .seg {
+    display: inline-flex; align-items: center; gap: 7px; height: var(--h-chip); padding: 0 12px 0 10px; border: 0;
+    border-radius: var(--r-pill); background: transparent; cursor: pointer; font-size: var(--fs-sm); color: var(--muted);
+    transition: background .2s, color .2s;
+  }
+  .seg i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+  .seg b { color: var(--ink); font-weight: 600; }
+  .seg .l-short { display: none; }
+  .seg[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--lift), inset 0 0 0 1.5px var(--c); }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar {
+    position: sticky; top: 0; z-index: 5;
+    background: color-mix(in srgb, var(--bg) 96%, transparent);
+    backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  }
+  .toolbar.stuck { box-shadow: 0 1px 0 var(--line); }
+  .bar1 { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-top: 14px; padding-bottom: 10px; }
+  /* On a computer the search box has the same width in every collection (it no longer spans the whole row
+     where nothing sits next to it); on a phone it takes the row next to Filters. */
+  .search { position: relative; flex: 1 1 320px; max-width: 420px; }
+  .search input {
+    width: 100%; height: var(--h-btn); border-radius: var(--r-pill); border: 0; background: var(--surface);
+    box-shadow: var(--lift); padding: 0 18px 0 46px; font-size: var(--fs-base);
+  }
+  .search input::placeholder { color: var(--muted); }
+  .search svg { position: absolute; left: 17px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); }
+  .select, .toggle {
+    height: var(--h-btn); border-radius: var(--r-pill); border: 0; background: var(--surface); box-shadow: var(--lift);
+    padding: 0 16px; cursor: pointer; font-weight: 500; transition: background .2s, color .2s;
+  }
+  .select {
+    appearance: none; -webkit-appearance: none; padding-right: 38px;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22%23677080%22%3E%3Cpath%20d%3D%22M213.66%2C101.66l-80%2C80a8%2C8%2C0%2C0%2C1-11.32%2C0l-80-80A8%2C8%2C0%2C0%2C1%2C53.66%2C90.34L128%2C164.69l74.34-74.35a8%2C8%2C0%2C0%2C1%2C11.32%2C11.32Z%22/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center; background-size: 12px 12px;
+  }
+  .select.on, .toggle[aria-pressed="true"] { background-color: var(--ink); color: #fff; }
+  .toggle { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .toggle svg { width: 15px; height: 15px; flex: none; }
+  .select.on { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22%23ffffff%22%3E%3Cpath%20d%3D%22M213.66%2C101.66l-80%2C80a8%2C8%2C0%2C0%2C1-11.32%2C0l-80-80A8%2C8%2C0%2C0%2C1%2C53.66%2C90.34L128%2C164.69l74.34-74.35a8%2C8%2C0%2C0%2C1%2C11.32%2C11.32Z%22/%3E%3C/svg%3E"); }
+
+  /* Filters: behind the Filters button everywhere, the same fields in the same order: a panel under the button on a
+     computer, a bottom sheet on a phone (below). The bar keeps only the search, the button and the teams. */
+  .bar1 { position: relative; }
+  .more {
+    display: grid; gap: 16px; position: absolute; top: calc(100% - 2px); left: 0; z-index: 30; width: 380px;
+    max-height: calc(100vh - 150px); overflow-y: auto; padding: 4px 20px 22px; background: var(--surface);
+    border-radius: var(--r-lg); box-shadow: var(--lift-hi); transform-origin: top left;
+    opacity: 0; transform: translateY(-6px) scale(.98); visibility: hidden; transition: opacity .18s, transform .18s, visibility .18s;
+  }
+  .more.open { opacity: 1; transform: none; visibility: visible; }
+  .more-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding-top: 10px; position: relative; }
+  .more-head .grab { display: none; }
+  .more-head b { grid-column: 2; grid-row: 1; text-align: center; font-size: var(--fs-md); font-weight: 700; }
+  .more-reset, .more-done { grid-row: 1; border: 0; background: none; font-weight: 600; font-size: var(--fs-base); padding: 8px 2px; cursor: pointer; }
+  .more-reset { grid-column: 1; color: var(--muted); }
+  .more-done { grid-column: 3; color: var(--accent); }
+  .field { display: grid; gap: 7px; }
+  .lab { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--muted); }
+  .tg { display: flex; flex-wrap: wrap; gap: 8px; }
+  .more .select, .more .toggle { width: 100%; background-color: var(--bg); box-shadow: none; }
+  .more .select.on, .more .toggle[aria-pressed="true"] { background-color: var(--ink); }
+  .more .toggle { width: auto; flex: 1 1 auto; white-space: nowrap; padding: 0 14px; }   /* one line each; one that does not fit goes to the next row */
+  .filters-btn {
+    display: inline-flex; flex: none; align-items: center; gap: 8px; height: var(--h-btn); padding: 0 16px 0 14px; border: 0; border-radius: var(--r-pill);
+    background: var(--surface); box-shadow: var(--lift); font-weight: 600; cursor: pointer; transition: background .2s, color .2s;
+  }
+  .filters-btn svg { width: 18px; height: 18px; }
+  .filters-btn .n { min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--r-sm); background: #fff; color: var(--ink); font-size: var(--fs-xs); font-weight: 700; display: grid; place-items: center; }
+  .filters-btn.on { background: var(--ink); color: #fff; }
+  .more-scrim { position: fixed; inset: 0; z-index: 24; background: rgba(20,22,27,.38); opacity: 0; transition: opacity .25s; }
+  .more-scrim.open { opacity: 1; }
+
+  .teams-row {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: none;
+    mask-image: linear-gradient(90deg, #000 85%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
+  }
+  .teams-row::-webkit-scrollbar { display: none; }
+  .team-chip {
+    flex: none; display: inline-flex; align-items: center; gap: 8px; height: var(--h-chip); padding: 0 14px 0 6px;
+    border-radius: var(--r-pill); border: 0; background: var(--surface); box-shadow: var(--lift); cursor: pointer;
+    font-size: var(--fs-base); font-weight: 500; white-space: nowrap; transition: background .2s, color .2s;
+  }
+  .team-chip.all { padding-left: 14px; }
+  .team-chip .dot { width: 24px; height: 24px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; overflow: hidden; }
+  .team-chip .k { color: var(--muted); font-weight: 500; }
+  .team-chip[aria-pressed="true"] { background: var(--c, var(--ink)); color: #fff; }
+  .team-chip[aria-pressed="true"] .k { color: rgba(255,255,255,.75); }
+  .team-chip[aria-pressed="true"] .dot { background: rgba(255,255,255,.22); }
+  /* A team logo in its circle (chips, team tags, the crest on cards). Each file is fitted to a circle: the
+     drawing's farthest point from its center touches the edge of the square file (claude/processo-logos.md), so
+     every logo, round or wide, is as big as the circle allows and they all look the same size. Here the file
+     takes ~81-86% of the circle, in whole pixels with even margins so it sits dead center. The circle is white
+     behind a logo; the team color is only behind the sport icon shown while a team has no logo yet. */
+  /* (as specific as the .team-chip .dot / .team-tag .dot / .crest .dot rules that set the team color) */
+  .team-chip .dot:has(img), .team-chip[aria-pressed="true"] .dot:has(img), .team-tag .dot:has(img), .crest .dot:has(img) { background: #fff; }
+  .dot img { width: 26px; height: 26px; object-fit: contain; flex: none; }  /* card crest: 32 px, ring + 1 px */
+  .team-chip .dot img { width: 20px; height: 20px; }                       /* chip: 24 px circle */
+  .team-tag .dot img { width: 24px; height: 24px; }                        /* panel tag: 28 px circle */
+  /* A team with no logo yet, or no team: the sport's icon, white on the circle's color. */
+  .dot > svg { width: 18px; height: 18px; color: #fff; }
+  .team-chip .dot > svg { width: 14px; height: 14px; }
+  .team-tag .dot > svg { width: 16px; height: 16px; }
+
+  .status { display: flex; align-items: center; gap: 14px; padding-top: 6px; padding-bottom: 4px; color: var(--muted); font-size: var(--fs-sm); }
+  .status b { color: var(--ink); font-weight: 600; }
+  .clear { border: 0; background: none; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; }
+
+  /* ---------- Grid ---------- */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(218px, 1fr)); gap: 20px; padding-top: 18px; padding-bottom: 90px; }
+  .cell { position: relative; display: flex; align-self: stretch; transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+  .card {
+    display: flex; flex-direction: column; flex: 1; width: 100%; padding: 0; border: 0; text-align: left;
+    background: var(--surface); border-radius: var(--r-card); overflow: hidden; cursor: pointer; box-shadow: var(--lift);
+    transition: box-shadow .3s;
+  }
+
+  /* Add photo */
+  .snap-zone { position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 1 / 1; pointer-events: none; z-index: 2; }
+  .snap, .stage-add {
+    position: absolute; right: 12px; bottom: 12px; pointer-events: auto; display: inline-flex; align-items: center; gap: 7px;
+    height: var(--h-chip); padding: 0 14px 0 11px; border: 0; border-radius: var(--r-pill); cursor: pointer;
+    background: rgba(255,255,255,.94); color: var(--ink); font-size: var(--fs-sm); font-weight: 600;
+    box-shadow: var(--float); transition: transform .15s, background .2s;
+  }
+  .snap svg, .stage-add svg { width: 17px; height: 17px; flex: none; }
+  @media (hover: hover) {
+    .snap { opacity: 0; transition: opacity .2s, transform .15s, background .2s; }
+    .cell:hover .snap, .cell:focus-within .snap, .snap:focus-visible { opacity: 1; }
+  }
+  .stage-add { right: 18px; bottom: 18px; height: var(--h-btn); padding: 0 16px 0 13px; font-size: var(--fs-base); z-index: 3; }
+  .busy {
+    position: absolute; inset: 0; z-index: 4; display: grid; place-content: center; justify-items: center; gap: 12px;
+    background: rgba(20,22,27,.55); color: #fff; font-weight: 600; font-size: var(--fs-sm);
+    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  }
+  .busy i { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(255,255,255,.3); border-top-color: #fff; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Back to the top of the page: the panels' white round button, bottom right, after about two screens down the list. */
+  .to-top {
+    position: fixed; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 6;
+    background: rgba(255,255,255,.94); box-shadow: var(--lift-hi);
+    opacity: 0; transform: translateY(12px); visibility: hidden; transition: opacity .2s, transform .2s, visibility .2s;
+  }
+  .to-top.show { opacity: 1; transform: none; visibility: visible; }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; z-index: 40; transform: translate(-50%, 20px); opacity: 0;
+    max-width: calc(100% - 32px); padding: 12px 18px; border-radius: var(--r-md); background: var(--ink); color: #fff;
+    font-weight: 600; box-shadow: var(--lift-hi); transition: opacity .25s, transform .25s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.error { background: var(--danger); }
+  .media { position: relative; aspect-ratio: 1 / 1; overflow: hidden; background: var(--c); }
+  .media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+  .ph {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    background:
+      radial-gradient(90% 70% at 85% 0%, rgba(255,255,255,.22), transparent 60%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,.055) 0 2px, transparent 2px 14px),
+      linear-gradient(160deg, var(--c), color-mix(in srgb, var(--c) 72%, #000));
+  }
+  /* A frame waiting for its photo: team color and a soft sheen, no initials or icon (see photoFrame) */
+  .ph.loading > * { visibility: hidden; }
+  .ph.loading::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.16) 50%, transparent 65%) 0 0 / 250% 100%;
+    animation: sheen 1.4s ease-in-out infinite;
+  }
+  @keyframes sheen { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+  /* A placeholder icon in a photo frame (a sport's icon, or the trophy for Game Used). */
+  .ph .figure { width: 46%; height: auto; color: rgba(255,255,255,.9); filter: drop-shadow(0 6px 18px rgba(0,0,0,.2)); }
+  .initials {
+    color: #fff; font-weight: 800; font-size: 80px; letter-spacing: -.06em; line-height: 1; opacity: .95;
+    transition: transform .5s cubic-bezier(.2,.8,.2,1); text-shadow: 0 6px 24px rgba(0,0,0,.18);
+  }
+  .badges { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; height: var(--h-tag); padding: 0 10px; border-radius: var(--r-pill);
+    background: rgba(255,255,255,.92); color: var(--ink); font-size: var(--fs-xs); font-weight: 600;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .badge.gold { background: var(--gold); }
+  .badge.practice { box-shadow: inset 0 0 0 2px var(--gold); }   /* Practice Used: the gold as an outline */
+  /* Icons inside a tag, after a thin line: what proves the usage, or the ticket in a result. */
+  .proofs { display: inline-flex; align-items: center; gap: 6px; margin-left: 7px; padding-left: 7px; height: 14px; border-left: 1px solid rgba(0,0,0,.28); }
+  .proofs svg { width: 14px; height: 14px; flex: none; }
+  .badge .proofs { margin-left: 1px; }
+  .result .proofs { border-left-color: rgba(255,255,255,.5); }
+  .badge.count { margin-left: auto; gap: 5px; padding: 0 9px 0 8px; background: var(--shade); color: #fff; }
+  .badge.count svg { width: 12px; height: 12px; flex: none; }
+  .badge.count.sign-only { padding: 0 8px; }        /* the signature alone: signed (a number only when there are several) */
+  .badge.count.sign-only svg { width: 14px; height: 14px; }
+  .body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .body .id { font-size: var(--fs-xs); color: var(--muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .body .who { font-size: var(--fs-lg); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+  .body .what { color: var(--muted); font-size: var(--fs-sm); }
+  .body .what .ln { display: block; }   /* Game Used: the opponent, then the date, each on its own line */
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* An inscription: the words written with the autograph, after a small gray quotes icon (the signature icon
+     means a signature, and blue means signed, so neither is used here). On a card one line, cut with "…"; in a
+     panel in full. */
+  .ins { display: flex; align-items: center; gap: 6px; min-width: 0; margin-top: 6px; color: var(--ink); font-weight: 600; font-size: var(--fs-sm); }
+  .ins svg { width: 15px; height: 15px; flex: none; color: var(--muted); }
+  .card .ins .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .sig .ins { margin-top: 4px; font-size: var(--fs-base); }
+  .sig .ins svg { width: 16px; height: 16px; } /* lines up with the fact icons below it */
+  .foot { margin-top: auto; padding-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .how {
+    display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); font-weight: 600; color: var(--ink);
+    padding: 4px 10px 4px 8px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--hc) 11%, var(--surface));
+  }
+  .how i { width: 7px; height: 7px; border-radius: 50%; background: var(--hc); }
+
+  .empty { grid-column: 1 / -1; text-align: center; padding: 80px 20px; }
+  .empty h2 { font-size: var(--fs-xl); letter-spacing: -.03em; margin: 0 0 8px; }
+  .empty p { color: var(--muted); margin: 0 0 18px; }
+  .empty button { height: var(--h-btn); padding: 0 20px; border-radius: var(--r-pill); border: 0; background: var(--ink); color: #fff; font-weight: 600; cursor: pointer; }
+
+  .skel { border-radius: var(--r-card); background: var(--surface); box-shadow: var(--lift); overflow: hidden; }
+  .skel .m { aspect-ratio: 1/1; background: linear-gradient(100deg, #E6E9ED 30%, #F4F5F7 50%, #E6E9ED 70%); background-size: 300% 100%; animation: shimmer 1.3s infinite linear; }
+  .skel .t { height: 12px; margin: 16px 18px 0; border-radius: var(--r-xs); background: #E9ECEF; }
+  .skel .t:last-child { width: 50%; margin-bottom: 20px; }
+  @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+  /* Waiting for a collection's first data: a home card (HOLD_NUM, HOLD_TEXT) and a summary line (SKEL_TEXT). */
+  .hold { visibility: hidden; }
+  /* One sweep over the whole card: light on the colored part, a faint shade on the white part, in step. */
+  .hub-card.loading .hub-art::before, .hub-card.loading .hub-body {
+    background: linear-gradient(105deg, transparent 35%, var(--sweep) 50%, transparent 65%) 0 0 / 250% 100%;
+    animation: sheen 1.4s ease-in-out infinite;
+  }
+  /* ::before, as ::after draws the card's stripes */
+  .hub-card.loading .hub-art::before { content: ''; position: absolute; inset: 0; pointer-events: none; --sweep: rgba(255,255,255,.22); }
+  .hub-card.loading .hub-body { --sweep: rgba(20,24,31,.06); }
+  .skel-line {
+    display: block; height: 1em; width: min(70%, 320px); margin: .2em 0; border-radius: var(--r-xs);
+    background: linear-gradient(100deg, #DDE1E7 30%, #ECEEF1 50%, #DDE1E7 70%) 0 0 / 300% 100%; /* shows on white and on the page gray */
+    animation: shimmer 1.3s infinite linear;
+  }
+
+  /* One orchestrated load moment */
+  .reveal .cell { opacity: 0; transform: translateY(14px) scale(.98); animation: rise .7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(var(--i) * 30ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  /* ---------- Detail sheet ---------- */
+  .scrim {
+    position: fixed; inset: 0; z-index: 20; background: rgba(20,22,27,.42);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    opacity: 0; visibility: hidden; transition: opacity .3s, visibility .3s; overflow-y: auto;
+    padding: 28px 24px 40px;
+  }
+  .scrim.open { opacity: 1; visibility: visible; }
+  .sheet {
+    position: relative; max-width: 1120px; margin: 0 auto; background: var(--surface); border-radius: var(--r-xl);
+    overflow: clip; box-shadow: var(--sheet);
+    transform: translateY(24px) scale(.985); transition: transform .4s cubic-bezier(.2,.8,.2,1);
+  }
+  .scrim.open .sheet { transform: none; }
+  .scrim.still, .scrim.still .sheet { transition: none; } /* the browser's back or forward: the phone already animated it */
+  .sheet-nav {
+    position: absolute; top: 18px; right: 18px; z-index: 3; display: flex; gap: 8px; align-items: center;
+  }
+  .sheet-nav .pos { color: var(--muted); font-size: var(--fs-sm); font-weight: 600; margin-right: 6px; }
+  /* Back arrow: to the panel this one was opened from (the ‹ › arrows are previous / next in the list) */
+  .sheet-back { position: absolute; top: 18px; left: 18px; z-index: 3; }
+  .sheet.has-back .stage .badges { top: 72px; }
+  .round {
+    width: var(--h-btn); height: var(--h-btn); border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
+    background: rgba(255,255,255,.92); box-shadow: var(--float); color: var(--ink);
+  }
+  .round:disabled { opacity: .4; cursor: default; }
+  .round svg { width: 18px; height: 18px; }
+  .sheet-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .stage { position: relative; background: color-mix(in srgb, var(--c) 72%, #000); }
+  .stage .media { position: sticky; top: 0; aspect-ratio: auto; height: min(720px, calc(100vh - 56px)); }
+  .stage .media img { object-fit: contain; background: color-mix(in srgb, var(--c) 10%, #fff); }
+  .stage .initials { font-size: 180px; }
+  .thumbs { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; z-index: 2; padding: 10px 18px 18px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .thumbs::-webkit-scrollbar { display: none; }
+  /* The camera on a panel photo: the gallery card's white circle, a 44 px touch target, centered on the thumbnails' line;
+     the thumbnails stop before it */
+  .photo-add { position: absolute; right: 18px; bottom: 24px; z-index: 3; width: 44px; height: 44px; border-radius: 50%; border: 0; padding: 0; display: grid; place-items: center; cursor: pointer; background: rgba(255,255,255,.88); color: var(--ink); box-shadow: var(--lift); transition: transform .15s, background .2s; }
+  .photo-add svg { width: 19px; height: 19px; }
+  .media.has-add .thumbs { right: 62px; }
+  .thumbs button { flex: none; width: 56px; height: 56px; border-radius: var(--r-md); overflow: hidden; border: 3px solid transparent; padding: 0; cursor: pointer; background: #fff; }
+  /* The video's tile: a frame of the video under a round play mark, the team color until the frame arrives */
+  .thumbs .video-tile { position: relative; display: grid; place-items: center; background: var(--c, var(--shade)); background-clip: padding-box; border-width: 2px; color: #fff; transition: transform .15s; }
+  .thumbs .video-tile img { position: absolute; inset: 0; }
+  .thumbs .video-tile .play { position: relative; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); box-shadow: 0 0 0 1.5px rgba(255,255,255,.85); }
+  .thumbs .video-tile .play svg { width: 13px; height: 13px; }   /* Phosphor already sets the triangle optically centered */
+  /* The slide on show: one quiet sign, a thin white ring at full strength; the others only dimmed, all the same size
+     so the row stays even. The video's tile is one of them (it shows the video's slide), on the team color. */
+  .thumbs button[data-i] { background: #111; background-clip: padding-box; border-width: 2px; opacity: .55; transition: opacity .18s, border-color .18s; }
+  .thumbs button.video-tile[data-i] { background: var(--c, var(--shade)); background-clip: padding-box; }
+  .thumbs button[data-i][aria-current="true"] { border-color: #fff; opacity: 1; }
+  .thumbs img, .stage .media .thumbs img { width: 100%; height: 100%; object-fit: cover; background: none; }   /* a thumbnail fills its square (the panel photo above is contained) */
+
+  .info { padding: 40px 44px 46px; }
+  .info .id { color: var(--muted); font-size: var(--fs-sm); font-weight: 600; }
+  .info h2 { margin: 6px 0 16px; font-size: clamp(34px, 4vw, 52px); font-weight: 800; letter-spacing: -.045em; line-height: .98; }
+  .team-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+  .team-tag {
+    display: inline-flex; align-items: center; gap: 9px; height: var(--h-chip); padding: 0 14px 0 5px; border-radius: var(--r-pill);
+    background: color-mix(in srgb, var(--c) 10%, var(--surface)); font-weight: 600; font-size: var(--fs-sm);
+  }
+  .team-tag .dot { width: 28px; height: 28px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; overflow: hidden; }
+  /* A card's team (crestHtml): logo in a white circle, bottom left of the photo. */
+  .media .crest { position: absolute; left: 8px; bottom: 8px; /* mirrors the camera button: same size and inset */ z-index: 2; display: flex; align-items: center; pointer-events: none; }
+  .crest .dot {
+    /* 32 px across with its white ring, the same circle as the camera button */
+    box-sizing: border-box; width: 32px; height: 32px; border: 2px solid #fff; border-radius: 50%; background: var(--c); color: #fff;
+    display: grid; place-items: center; overflow: hidden; box-shadow: var(--lift);
+  }
+  /* With a logo the whole circle is white: the team color stays only behind a sport icon (no logo), so it
+     cannot show as a thin colored ring at the edge of the white border. */
+  .crest .dot { background-clip: padding-box; }
+  .crest .dot + .dot { margin-left: -8px; }
+  .crest .more { margin-left: 4px; padding: 0 7px; height: 22px; line-height: 22px; border-radius: var(--r-pill); background: rgba(255,255,255,.9); color: var(--ink); font-size: var(--fs-xs); font-weight: 600; }
+
+  /* How an item came (a game-used item's "Obtained …"): a footnote under its note. */
+  .info .bought { margin: -8px 0 22px; color: var(--muted); font-size: var(--fs-sm); display: flex; flex-direction: column; align-items: flex-start; gap: 4px; } /* right under the note: date and price, then the place, so a long place never wraps */
+  /* A fact as a gray Phosphor icon and its value, no label word (factHtml): the certificate, the place as
+     written (no preposition), who gave it; the label is there for screen readers. */
+  .icon-fact { display: inline-flex; align-items: flex-start; gap: 6px; }
+  .icon-fact svg { width: 16px; height: 16px; flex: none; color: var(--muted); margin-top: .2em; }
+  .info .bought .icon-fact b { font-weight: 500; color: var(--muted); }
+  .bought .icon-fact svg { width: 14px; height: 14px; margin-top: .15em; }
+
+  /* An item's usage as a tag next to its team (usageTag), and its lines under them (lineHtml): gray icon for the
+     claim (who used it), blue for the proof (certificate, photo match); who used it a little larger. */
+  .use-tag { display: inline-flex; align-items: center; height: var(--h-chip); padding: 0 14px; border-radius: var(--r-pill); background: var(--bg); font-weight: 600; font-size: var(--fs-sm); }
+  /* The same gold as the badge on the card's photo: one object, one look, in the gallery and in its panel. */
+  .use-tag.gold { background: var(--gold); }
+  .use-tag.practice { background: var(--surface); box-shadow: inset 0 0 0 2px var(--gold); }
+  .info .line-fact { display: flex; align-items: center; gap: 7px; margin: -12px 0 30px; color: var(--muted); font-size: var(--fs-sm); }
+  .info .line-fact svg { width: 17px; height: 17px; flex: none; color: var(--muted); }
+  .info .line-fact.proof svg { color: var(--signed); }
+  .info .line-fact b { font-weight: 600; color: var(--ink); }
+  .info .line-fact + .line-fact { margin-top: -24px; }
+  .info .line-fact.who b { font-size: var(--fs-md); font-weight: 700; }
+  .info .line-fact.who svg { width: 20px; height: 20px; }
+  .info .line-fact.who + .line-fact { margin-top: -18px; }
+  /* "Also in …": the same object in another collection, with room before it. */
+  .info .also { margin-top: 30px; }
+  /* Section labels ("Signed by", "More from …", "Also in …"): small and gray, so the names under them lead. */
+  .info h3 { margin: 0 0 12px; font-size: var(--fs-base); font-weight: 600; letter-spacing: 0; color: var(--muted); }
+  .info h3 span { font-weight: 500; }
+  /* Links to other screens ("More from …", "Also in …"), below the item's own content: more space before the
+     first of them, no line (the panels separate blocks with space only). */
+  .info .sigs + h3.section { margin-top: 40px; }
+  .info .sigs + h3, .info .mh-signed + h3, .info .also + h3 { margin-top: 30px; }
+  .sigs { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .sig { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px 18px; }
+  .sig .name { font-size: var(--fs-lg); font-weight: 700; letter-spacing: -.015em; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .sig .when { color: var(--muted); font-size: var(--fs-sm); margin-top: 1px; }
+  .sig .rest { margin-top: 10px; display: grid; gap: 4px; font-size: var(--fs-base); }
+  .sig .row { color: var(--muted); }
+  .sig .row b { color: var(--ink); font-weight: 600; }
+  .info .sig .note { margin: 4px 0 0; max-width: 62ch; }
+  .sig a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  .sig a:hover { text-decoration: underline; }
+  .sig .row a { position: relative; }
+  .sig .row a::after { content: ""; position: absolute; left: -8px; right: -8px; top: 50%; height: var(--h-btn); transform: translateY(-50%); } /* a finger-sized target */
+  /* Instagram (a post or a story): icon and text in the link blue, like every link in the app. */
+  .info a.insta { display: inline-flex; align-items: center; gap: 6px; vertical-align: bottom; }
+  .info a.insta svg { width: 16px; height: 16px; flex: none; }
+  /* Links inside a note (every collection): the link blue; an Instagram one with a smaller icon. */
+  .info .note a, .info .lead a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  .info .note a:hover, .info .lead a:hover { text-decoration: underline; }
+  .info .note a.insta, .info .lead a.insta { gap: 3px; }
+  .info .note a.insta svg, .info .lead a.insta svg { width: 14px; height: 14px; }
+
+  .grid { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
+  .toast { bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+
+  /* ---------- Screens: home, Autographed, Game Used ---------- */
+  .back {
+    display: inline-flex; align-items: center; gap: 4px; margin: 0 0 10px -2px; color: var(--muted);
+    font-weight: 600; font-size: var(--fs-sm); text-decoration: none;
+  }
+  .back::before { content: ""; width: 16px; height: 16px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M165.66%2C202.34a8%2C8%2C0%2C0%2C1-11.32%2C11.32l-80-80a8%2C8%2C0%2C0%2C1%2C0-11.32l80-80a8%2C8%2C0%2C0%2C1%2C11.32%2C11.32L91.31%2C128Z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M165.66%2C202.34a8%2C8%2C0%2C0%2C1-11.32%2C11.32l-80-80a8%2C8%2C0%2C0%2C1%2C0-11.32l80-80a8%2C8%2C0%2C0%2C1%2C11.32%2C11.32L91.31%2C128Z%22/%3E%3C/svg%3E") center / contain no-repeat; }
+  .view:not(#view-hub) .hero h1 { font-size: clamp(38px, 5vw, 66px); line-height: .98; }
+
+  .hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 22px; padding-top: 8px; padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
+  .hub-card {
+    display: flex; flex-direction: column; border-radius: var(--r-xl); overflow: hidden; background: var(--surface);
+    box-shadow: var(--lift); color: inherit; text-decoration: none; transition: box-shadow .3s, transform .3s cubic-bezier(.2,.8,.2,1);
+  }
+  .hub-art { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--art); color: #fff; }
+  .hub-art::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 2px, transparent 2px 16px); }
+  .hub-art .big { position: absolute; left: 24px; bottom: 16px; font-weight: 800; font-size: 78px; line-height: 1; letter-spacing: -.05em; text-shadow: 0 6px 24px rgba(0,0,0,.2); }
+  .hub-art .big small { display: block; font-size: var(--fs-base); letter-spacing: 0; font-weight: 600; opacity: .85; margin-top: 4px; }
+  /* The big icon fits an area on the right, the same 24px from the edge as the number on the left (see hubIcon). */
+  .hub-art svg { position: absolute; right: 24px; top: 14%; width: 44%; height: 72%; opacity: .2; }
+  .hub-body { padding: 18px 22px 22px; display: grid; gap: 6px; }
+  .hub-body h2 { margin: 0; font-size: var(--fs-lg); font-weight: 700; letter-spacing: -.025em; }
+  .hub-body p { margin: 0; color: var(--muted); }
+
+  .marks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 10px; }
+  .info .note { margin: 0 0 22px; max-width: 60ch; }
+  .badge.ref { background: var(--shade); color: #fff; }
+  .mh-signed { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .mh-signed button {
+    width: 100%; display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; padding: 8px 14px 8px 8px;
+    border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); text-align: left; cursor: pointer;
+  }
+  .mh-signed .media { width: 64px; height: 64px; border-radius: var(--r-sm); aspect-ratio: auto; }
+  .mh-signed .media .initials { font-size: 24px; }
+  .mh-signed b { display: block; font-size: var(--fs-md); font-weight: 700; letter-spacing: -.01em; }
+  .mh-signed small { display: block; color: var(--muted); font-size: var(--fs-sm); }
+  .mh-signed .go { color: var(--muted); font-size: var(--fs-lg); }
+  .info .lead { color: var(--muted); margin: -6px 0 22px; max-width: 60ch; }
+  .menu-warn { margin: 2px 2px 6px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--warn-bg); color: var(--warn-ink); font-size: var(--fs-sm); }
+  .menu-warn b { display: block; font-weight: 700; }
+  .menu-warn small { display: block; margin-top: 3px; color: var(--warn-ink); font-size: var(--fs-xs); }
+  .menu-warn span { font-weight: 600; word-break: break-word; }
+  .menu-warn.checks { padding: 12px 12px 4px; }
+  .menu-warn.checks > b { margin-bottom: 6px; }
+  .menu-warn.checks ul { list-style: none; margin: 0; padding: 0; }
+  .menu-warn.checks li { padding: 8px 0; border-top: 1px solid color-mix(in srgb, var(--warn-ink) 18%, transparent); }
+  .icon-btn.alert { position: relative; }
+  .icon-btn.alert::after { content: ""; position: absolute; top: 6px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 2px var(--surface); }
+  .info .marks { margin: 0 0 22px; padding: 0; }
+  /* Game Used: the result tag on a card (with the ticket when he was there), the scoreboard and the moment in a panel. */
+  .gu-marks { align-items: center; }
+  .result { display: inline-flex; align-items: center; height: var(--h-tag); padding: 0 10px; border-radius: var(--r-pill); font-size: var(--fs-xs); font-weight: 700; background: var(--shade); color: #fff; }
+  .result.r-w { background: var(--have); }
+  .result.r-l { background: color-mix(in srgb, var(--missing) 70%, var(--muted)); }
+  .gu-tag { display: inline-flex; align-items: center; gap: 4px; height: var(--h-tag); padding: 0 9px 0 7px; border-radius: var(--r-pill); font-size: var(--fs-xs); font-weight: 600; color: var(--muted); background: color-mix(in srgb, var(--missing) 30%, var(--surface)); }
+  .gu-tag svg { width: 13px; height: 13px; }
+  .gu-tag.icon { width: var(--h-tag); padding: 0; justify-content: center; color: var(--ink); }   /* I was there: his, so not gold */
+  .gu-tag.icon svg { width: 15px; height: 15px; }
+  .scoreboard { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px 16px; margin: 0 0 22px; max-width: 460px; }
+  .sb-head { display: flex; align-items: center; margin-bottom: 8px; }   /* the result, on the left, read first */
+  .sb-row { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; padding: 5px 0; color: var(--muted); }
+  .sb-row .dot { width: 28px; height: 28px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; overflow: hidden; }
+  .sb-row .dot:has(img) { background: #fff; }
+  .sb-row .dot img { width: 24px; height: 24px; }
+  .sb-row .dot > svg { width: 16px; height: 16px; }
+  .sb-row .sb-team { font-weight: 600; }
+  .sb-row .sb-runs { font-size: var(--fs-lg); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .sb-row.won { color: var(--ink); }
+  .sb-row.won .sb-team, .sb-row.won .sb-runs { font-weight: 800; }
+  .sb-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: var(--fs-sm); }
+  .sb-meta .icon-fact b { font-weight: 500; color: var(--muted); }
+  .sb-meta .icon-fact svg { width: 14px; height: 14px; margin-top: .15em; }
+  /* The moment speaks the scoreboard's language: the same card, a head (the inning, muted, where the scoreboard has its
+     result), a thin line between two batters (as above the scoreboard's date). No bands, no filled boxes: nothing else has them. */
+  .moment { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px 16px; margin: 0 0 22px; max-width: 460px; }
+  .moment.plain { border: 0; border-radius: 0; padding: 0; max-width: 60ch; color: var(--muted); }
+  .moment.plain p { margin: 0; }
+  .mo-inning { color: var(--muted); font-size: var(--fs-sm); font-weight: 600; margin-bottom: 10px; }
+  .mo-ab { display: flex; flex-wrap: wrap; gap: 6px 28px; }
+  .mo-ab + .mo-ab { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .mo-who { display: grid; }
+  .mo-who small { color: var(--muted); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .mo-who b { font-weight: 700; }
+  .mo-ab ul { flex-basis: 100%; margin: 4px 0 0; padding: 0 0 0 18px; display: grid; gap: 6px; color: var(--muted); font-size: var(--fs-sm); line-height: 1.5; }
+  .info .ref-link { display: inline-flex; margin-top: 18px; color: var(--accent); font-weight: 600; text-decoration: none; }
+
+  /* Hover effects only where there is a mouse: on a phone a tap would leave them stuck on. */
+  @media (hover: hover) {
+    .icon-btn:hover { transform: rotate(-30deg); }
+    .icon-btn.menu-btn:hover { transform: none; }
+    .seg:hover { background: var(--surface); }
+    .cell:hover { transform: translateY(-4px); }
+    .cell:hover .card { box-shadow: var(--lift-hi); }
+    .card:hover .media img, .card:hover .initials { transform: scale(1.04); }
+    .snap:hover, .stage-add:hover, .photo-add:hover { background: #fff; transform: scale(1.04); }
+    .thumbs .video-tile:hover { transform: scale(1.04); }
+    .stage .media.on-video:hover .slide-play .play { transform: scale(1.06); }
+    .menu a:hover { background: var(--bg); }
+    .hub-card:hover { box-shadow: var(--lift-hi); transform: translateY(-4px); }
+    .mh-signed button:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+  }
+
+  @media (max-width: 900px) {
+    /* On a phone the gallery is how you move between items: no previous / next and no "3 of 56" on a panel
+       (they sat out of the thumb's reach and over the photo); the keyboard arrows still work where there is one. */
+    .sheet-nav .pos, #d-prev, #d-next { display: none; }
+    .snap { right: 8px; bottom: 8px; width: 32px; height: 32px; padding: 0; justify-content: center; background: rgba(255,255,255,.82); box-shadow: var(--lift); }
+    .snap svg { width: 15px; height: 15px; }
+    .snap span { display: none; }
+    .wrap { padding-left: 18px; padding-right: 18px; }
+
+    /* Compact header: the collection shows up on the first screen */
+    .hero { padding-top: 18px; padding-bottom: 6px; }
+    .hero-top { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px 12px; }
+    .hero-top > div:first-child { display: contents; }
+    .hero h1 { grid-column: 1; grid-row: 1; }
+    .actions { grid-column: 2; grid-row: 1; }
+    .hero p { grid-row: 2; }
+    .hero h1 { font-size: var(--fs-2xl); line-height: 40px; letter-spacing: -.03em; white-space: nowrap; }
+    .view:not(#view-hub) .hero h1 { font-size: var(--fs-xl); line-height: 32px; white-space: normal; }
+    /* Collection pages: the buttons share the row of "‹ Memorabilia Showcase", so the title gets the full width */
+    .view:not(#view-hub) .hero { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; }
+    .view:not(#view-hub) .hero > * { grid-column: 1 / -1; }
+    .view:not(#view-hub) .hero-top { display: contents; }
+    .view:not(#view-hub) .hero .back { grid-column: 1; grid-row: 1; margin: 0; }
+    .view:not(#view-hub) .hero .actions { grid-column: 2; grid-row: 1; }
+    .view:not(#view-hub) .hero h1 { grid-column: 1 / -1; grid-row: 2; margin-top: 4px; }
+    .view:not(#view-hub) .hero p { grid-column: 1 / -1; grid-row: 3; margin-top: 8px; }
+    .back { margin-bottom: 6px; }
+    .hub-grid { grid-template-columns: 1fr; gap: 16px; }
+    .hub-art .big { font-size: 62px; left: 20px; }
+    .hero p { grid-column: 1 / -1; margin-top: 2px; font-size: var(--fs-base); }
+    .seg .l-long { display: none; }
+    .seg .l-short { display: inline; }
+    .actions { gap: 8px; }
+    .icon-btn { width: 40px; height: 40px; } /* compact phone header */
+    .menu { top: 48px; }
+    .provenance { margin-top: 14px; }
+    /* The legend wraps to a second line instead of hiding entries off screen. */
+    .legend { flex-wrap: wrap; margin: 6px -6px 0; gap: 0 2px; }
+    .legend::-webkit-scrollbar { display: none; }
+    .seg { flex: none; height: 32px; padding: 0 8px 0 6px; font-size: var(--fs-sm); gap: 5px; }
+
+    /* One compact bar that stays at the top: search + Filters, then teams */
+    /* 14px of extra room on top keeps the search clear of the faded band iOS draws under the status bar.
+       The negative margin cancels it while the bar is not stuck, so the page does not move. */
+    .toolbar { position: sticky; margin-top: -14px; pointer-events: none; }
+    .toolbar:not(.stuck) { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+    .bar1 > *, .teams-row { pointer-events: auto; }
+    .bar1 { flex-wrap: nowrap; gap: 8px; padding-top: 24px; padding-bottom: 8px; }
+    .search { flex: 1 1 0; min-width: 0; max-width: none; }
+    .search input { height: var(--h-btn); font-size: 16px; padding-left: 42px; }
+    .search svg { left: 15px; }
+    .teams-row { padding-bottom: 10px; }
+    .team-chip { height: var(--h-chip); }
+    .status { padding-top: 4px; }
+    .grid { padding-top: 12px; }
+
+    /* Bottom sheet with the other filters */
+    .more {
+      position: fixed; top: auto; left: 0 !important; right: 0; bottom: 0; z-index: 25; width: auto;
+      max-height: 85vh; border-radius: var(--r-xl) var(--r-xl) 0 0; opacity: 1;
+      padding: 8px 20px calc(26px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 40px rgba(0,0,0,.18);
+      transform: translateY(105%); transition: transform .32s cubic-bezier(.2,.8,.2,1), visibility .32s;
+    }
+    .more.open { transform: none; }
+    .more-head { padding-top: 18px; }
+    .more-head .grab { display: block; position: absolute; top: 0; left: 50%; width: 38px; height: 5px; margin-left: -19px; border-radius: var(--r-xs); background: var(--line); }
+    .more-reset, .more-done { font-size: var(--fs-md); }
+    .more .select, .more .toggle { height: var(--h-btn-lg); font-size: 16px; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .initials { font-size: 58px; }
+    .body { padding: 12px 13px 14px; }
+    .body .who { font-size: var(--fs-md); }
+    .scrim { padding: 0; }
+    .sheet { border-radius: 0; min-height: 100%; }
+    .sheet-grid { grid-template-columns: 1fr; }
+    .stage .media { position: relative; height: auto; aspect-ratio: 1 / 1; }
+    .stage .initials { font-size: 120px; }
+    .info { padding: 26px 20px calc(40px + env(safe-area-inset-bottom, 0px)); }
+    .sheet-nav .pos { color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.35); }
+    .stage .media { touch-action: pan-y; }
+  }
+  /* Panel photo: blurred fill and full-screen viewer (JsPanel.html) */
+  .stage { overflow: clip; }
+  .stage::before {
+    content: ''; position: absolute; inset: -40px; opacity: 0; transition: opacity .3s; pointer-events: none;
+    background: var(--photo) center / cover no-repeat; filter: blur(28px) saturate(1.2) brightness(.85);
+  }
+  .stage.backdrop::before { opacity: 1; }
+  .stage.backdrop .media { background: transparent; }
+  .stage.backdrop .media > img { background: transparent; }
+  .stage .media .badges { z-index: 2; }
+  .stage .media.zoomable { cursor: zoom-in; }
+  /* The video's slide: its frame, as a photo, under a big round play mark that rides with the slide; a tap plays it. */
+  .stage .media > .slide-play { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; color: #fff; pointer-events: none; }
+  .stage .media > .slide-play[hidden] { display: none; }
+  .slide-play .play { display: grid; place-items: center; width: 68px; height: 68px; border-radius: 50%; background: rgba(0,0,0,.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 0 0 2px rgba(255,255,255,.9); transition: transform .15s; }
+  .slide-play .play svg { width: 30px; height: 30px; }
+  .stage .media.zoomable.on-video { cursor: pointer; }
+  /* The photo waiting beside the shown one while swiping (panel and full screen). */
+  /* Until its photo arrives the slot shows the team color behind it (no empty box, no broken-image icon). */
+  .stage .media > img.slide-ghost { position: absolute; inset: 0; pointer-events: none; background: none; }
+  .slide-ghost:not([src]), .zoom-ghost:not([src]) { visibility: hidden; }
+  .zoom-ghost { position: absolute; inset: 0; margin: auto; pointer-events: none; }
+  /* Into a linked panel / back: the new panel's content slides in a little from that side. */
+  .sheet-grid.from-right { animation: from-right .26s cubic-bezier(.2,.8,.2,1); }
+  .sheet-grid.from-left { animation: from-left .26s cubic-bezier(.2,.8,.2,1); }
+  @keyframes from-right { from { transform: translateX(32px); opacity: 0; } }
+  @keyframes from-left { from { transform: translateX(-32px); opacity: 0; } }
+  .zoom { position: fixed; inset: 0; z-index: 35; background: #000; opacity: 0; transition: opacity .2s; touch-action: none; overscroll-behavior: contain; }
+  .zoom.open { opacity: 1; }
+  .zoom-frame { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; cursor: zoom-in; }
+  .zoom.zoomed .zoom-frame { cursor: grab; }
+  .zoom-img { max-width: 100%; max-height: 100%; width: auto; height: auto; transform-origin: 50% 50%; will-change: transform; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  .zoom-bar {
+    position: absolute; z-index: 2; left: 0; right: 0; top: 0; display: flex; justify-content: space-between; align-items: center;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px; pointer-events: none;
+  }
+  .zoom-bar > * { pointer-events: auto; }
+  .zoom-pos { color: rgba(255,255,255,.85); font-size: var(--fs-sm); font-weight: 600; }
+  .video-view { touch-action: manipulation; }
+  .video-frame { position: absolute; inset: 0; display: grid; place-items: center; touch-action: none; }
+  .video-frame video { width: 100%; max-height: 100%; background: #000; }
+  .video-wait { display: grid; justify-items: center; gap: 14px; color: rgba(255,255,255,.85); font-size: var(--fs-sm); font-weight: 600; text-align: center; padding: 0 32px; }
+  .video-ring { width: 32px; height: 32px; border-radius: 50%; border: 3px solid rgba(255,255,255,.25); border-top-color: #fff; animation: spin 1s linear infinite; }
+  .video-wait.failed .video-ring { display: none; }
+  .video-retry { height: var(--h-btn); padding: 0 22px; border: 0; border-radius: var(--r-pill); background: #fff; color: var(--ink); font-weight: 700; cursor: pointer; }
+  .zoom-x { margin-left: auto; background: rgba(0,0,0,.5); color: #fff; box-shadow: none; }
+  /* Framing a photo before it is saved (JsCrop.html) */
+  .crop {
+    position: fixed; inset: 0; z-index: 36; display: flex; flex-direction: column; background: #0B0C0F; color: #fff;
+    opacity: 0; transition: opacity .2s; touch-action: none; overscroll-behavior: contain; user-select: none; -webkit-user-select: none;
+  }
+  .crop.open { opacity: 1; }
+  .crop-bar { display: flex; align-items: center; gap: 12px; padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 8px; }
+  .crop-pos { margin-left: auto; color: rgba(255,255,255,.7); font-size: var(--fs-sm); font-weight: 600; }
+  .crop-cancel { border: 0; background: none; color: #fff; font: inherit; font-size: var(--fs-md); font-weight: 600; padding: 8px 4px; cursor: pointer; }
+  .crop-stage { position: relative; flex: 1; overflow: hidden; cursor: grab; }
+  .crop-stage:active { cursor: grabbing; }
+  .crop-img { position: absolute; left: 0; top: 0; transform-origin: 50% 50%; will-change: transform; }
+  .crop-frame { position: absolute; pointer-events: none; border: 2px solid rgba(255,255,255,.9); border-radius: var(--r-xs); box-shadow: 0 0 0 9999px rgba(11,12,15,.62); }
+  /* Straighten: a ruler under the frame (ticks every degree, longer every 5°), the angle above its center line. */
+  .crop-tilt { position: relative; height: 54px; margin: 6px auto 0; width: min(100%, 420px); overflow: hidden; touch-action: none; cursor: ew-resize; outline: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
+  .crop-deg { position: absolute; left: 50%; top: 0; transform: translateX(-50%); color: rgba(255,255,255,.75); font-size: var(--fs-xs); font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; padding: 0 6px; }
+  .crop-tilt.off .crop-deg { color: #fff; }
+  .crop-ruler { position: absolute; left: 50%; bottom: 8px; height: 22px; width: 0; }
+  .crop-ruler::after { content: ''; position: absolute; left: -1px; bottom: -4px; width: 2px; height: 28px; border-radius: 1px; background: #FFC93C; } /* the center line */
+  .crop-ruler i {
+    position: absolute; bottom: 0; left: -360px; width: 721px; height: 22px; /* -45°…45° at 8 px a degree */
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.85) 0 1px, transparent 1px 40px) 0 100% / 100% 16px no-repeat,
+      repeating-linear-gradient(90deg, rgba(255,255,255,.4) 0 1px, transparent 1px 8px) 0 100% / 100% 9px no-repeat;
+  }
+  .crop-tilt:focus-visible .crop-deg { outline: 2px solid #fff; border-radius: 4px; }
+  /* thirds grid inside the frame while straightening */
+  .crop-frame::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity .15s;
+    background:
+      linear-gradient(90deg, transparent calc(33.333% - .5px), rgba(255,255,255,.5) calc(33.333% - .5px) calc(33.333% + .5px), transparent calc(33.333% + .5px) calc(66.666% - .5px), rgba(255,255,255,.5) calc(66.666% - .5px) calc(66.666% + .5px), transparent calc(66.666% + .5px)),
+      linear-gradient(180deg, transparent calc(33.333% - .5px), rgba(255,255,255,.5) calc(33.333% - .5px) calc(33.333% + .5px), transparent calc(33.333% + .5px) calc(66.666% - .5px), rgba(255,255,255,.5) calc(66.666% - .5px) calc(66.666% + .5px), transparent calc(66.666% + .5px)); }
+  .crop-frame.grid::before { opacity: 1; }
+  .crop-actions { display: flex; gap: 10px; justify-content: center; padding: 10px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .crop-actions button {
+    flex: 1; max-width: 240px; height: var(--h-btn-lg); border-radius: var(--r-pill); border: 0; font: inherit; font-size: var(--fs-md); font-weight: 700; cursor: pointer;
+  }
+  .crop-orig { background: rgba(255,255,255,.14); color: #fff; }
+  .crop-ok { background: #fff; color: var(--ink); }
+  /* While the app checks the spreadsheet (see loadData), the reload buttons spin */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .syncing #hub-reload svg, .syncing #reload svg, .syncing #gu-reload svg { animation: spin 1s linear infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    /* The only sign that the video is still arriving: it keeps turning, slowly. */
+    .video-ring { animation: spin 3s linear infinite !important; }
+    .reveal .cell { opacity: 1; transform: none; }
+  }
+</style>

@@ -1,0 +1,452 @@
+<script>
+  'use strict';
+
+  /* JsApp.html: routing between screens, menus, events, phone gestures, adding photos, start. */
+
+  /* ---------- Screens and routing ----------
+     ''               the home page (one card per collection)
+     #autographed     Autographed Memorabilia
+     #AM-0015         one autographed item (over the current screen)
+     #game-used       Game Used Memorabilia
+     #game-used/GU-0001     one game-used item */
+  const hasHistory = !!(window.google && google.script && google.script.history);
+  const SCREENS = { hub: '#view-hub', am: '#view-am', gu: '#view-gu' };
+  const TITLES = { hub: 'Memorabilia Showcase', am: 'Autographed Memorabilia · Memorabilia Showcase', gu: 'Game Used Memorabilia · Memorabilia Showcase' };
+  const scrollMemo = {};
+  function back() {
+    // A panel opened from another panel (another item by the same signer...) goes back to it;
+    // otherwise to the list.
+    if (state.currentId && state.trail.length) return state.trail[state.trail.length - 1];
+    return listHash();
+  }
+  // Closing (X, Esc, pulling the panel down, a click outside it) leaves every panel and goes back to the list
+  // the first one was opened from.
+  function listHash() {
+    return { hub: '', am: 'autographed', gu: 'game-used' }[state.homeScreen || state.screen] || '';
+  }
+  // sibling = the previous/next arrows: the new panel replaces the current one in the trail.
+  function go(hash, sibling) {
+    hash = hash || '';
+    if (hasHistory) google.script.history.push(null, null, hash);
+    else location.hash = hash;
+    route(hash, sibling);
+  }
+  function showScreen(name) {
+    if (state.screen === name) return;
+    if (state.screen) scrollMemo[state.screen] = window.scrollY;
+    state.screen = name;
+    Object.keys(SCREENS).forEach(function (k) { $(SCREENS[k]).hidden = k !== name; });
+    document.title = TITLES[name];
+    window.scrollTo(0, scrollMemo[name] || 0);
+    onScroll();
+  }
+  let routed = false;
+  /* fromHistory: the browser's back or forward (the iPhone's edge swipe, the Back button), not a tap in the app. The
+     iPhone already animates that swipe with a snapshot of the page it goes to, so the app shows the panel as it is,
+     with no slide or fade of its own (a second movement after the swipe read as a flicker). */
+  function route(forced, sibling, fromHistory) {
+    closeZoom(); // a full-screen photo belongs to the panel that opened it
+    closeVideo(); // so does the video of the play
+    closeSheets(); // so does a Filters sheet to its collection
+    let h = forced === undefined ? location.hash : forced;
+    try { h = decodeURIComponent(String(h || '').replace(/^#/, '')); } catch (e) { h = ''; }
+    // Outside Apps Script go() also changes location.hash, whose hashchange routes the same place again.
+    if (forced === undefined && routed && h === state.hash) return;
+    routed = true;
+    state.hash = h;
+    let screen = 'hub', amId = null, guId = null;
+    if (/^AM-\d{4}$/.test(h)) { screen = state.screen || 'am'; amId = h; }
+    else if (h === 'autographed') screen = 'am';
+    else if (h === 'game-used') screen = 'gu';
+    else if (h.indexOf('game-used/') === 0) { screen = 'gu'; guId = h.slice(10); }
+    // An item whose ID is not like AM-0000 (reported in Things to check) still opens from its card.
+    else if (amItem(h)) { screen = state.screen || 'am'; amId = h; }
+    showScreen(screen);
+    // The trail of panels opened one from another, so closing goes back step by step.
+    const detail = amId || guId ? h : null;
+    const trail = state.trail;
+    const depth = trail.length, wasDetail = state.detailHash;
+    if (!detail) trail.length = 0;
+    else if (trail.length && trail[trail.length - 1] === detail) trail.pop();
+    else if (state.detailHash && state.detailHash !== detail && !sibling) trail.push(state.detailHash);
+    // The list the first panel was opened from, to land on it when the last panel closes.
+    if (detail && !state.detailHash) state.homeScreen = state.screen;
+    if (!detail) state.homeScreen = null;
+    state.detailHash = detail;
+    // Which way the panel moved: 1 into a linked panel, -1 back, 0 otherwise (opened from a list, ‹ ›).
+    state.navDir = detail && wasDetail && !sibling && !fromHistory ? Math.sign(trail.length - depth) : 0;
+    if (fromHistory) still();
+    if (amId && state.items.some(function (i) { return i.id === amId; })) { state.currentGu = null; openItem(amId); }
+    else if (guId && findGu(guId)) { openGu(guId); }
+    else if (state.currentId) closePanel();
+  }
+  if (hasHistory) {
+    google.script.history.setChangeHandler(function (e) { route(e.location.hash || '', false, true); });
+  } else {
+    window.addEventListener('hashchange', function () { route(undefined, false, true); });
+  }
+  document.addEventListener('click', function (e) {
+    const a = e.target.closest('[data-go]');
+    if (!a) return;
+    e.preventDefault();
+    go(a.dataset.go);
+  });
+
+  /* ---------- Shortcuts menu ---------- */
+  function toggleMenu(open, btn) {
+    $$('.menu-btn').forEach(function (b) {
+      const mine = btn && b === btn;
+      const isOpen = mine ? (open === undefined ? b.getAttribute('aria-expanded') !== 'true' : open) : false;
+      b.setAttribute('aria-expanded', isOpen);
+      $('#' + b.getAttribute('aria-controls')).classList.toggle('open', isOpen);
+    });
+  }
+  $$('.menu-btn').forEach(function (b) {
+    b.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(undefined, b); });
+  });
+  $$('.menu').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target.closest('a')) toggleMenu(false); }); });
+  document.addEventListener('click', function (e) { if (!e.target.closest('.actions')) toggleMenu(false); });
+
+  /* ---------- Events ---------- */
+  function clearAll() {
+    Object.assign(state, { q: '', sport: '', team: '', type: '', how: '', usage: '', cert: false, ins: false });
+    $('#q').value = ''; $('#f-sport').value = ''; $('#f-type').value = ''; $('#f-usage').value = '';
+    render();
+  }
+  let qTimer;
+  $('#q').addEventListener('input', function (e) {
+    clearTimeout(qTimer);
+    qTimer = setTimeout(function () { state.q = e.target.value.trim(); render(); }, 120);
+  });
+  $('#f-sport').addEventListener('change', function (e) { state.sport = e.target.value; render(); });
+  $('#f-type').addEventListener('change', function (e) { state.type = e.target.value; render(); });
+  $('#f-usage').addEventListener('change', function (e) { state.usage = e.target.value; render(); });
+  $('#f-cert').addEventListener('click', function () { state.cert = !state.cert; render(); });
+  $('#f-ins').addEventListener('click', function () { state.ins = !state.ins; render(); });
+  $('#sort').addEventListener('change', function (e) { state.sort = e.target.value; render(); });
+  $('#clear').addEventListener('click', clearAll);
+
+  /* ---------- Filters behind a button; phones: swipe down to close an item ---------- */
+  const phone = window.matchMedia('(max-width: 900px)');
+  const moreScrim = $('#more-scrim');
+  const sheets = [];
+  /* A Filters panel, behind its button everywhere: on a computer a panel under the button (a click outside or Esc
+     closes it, the page stays usable); on a phone a bottom sheet over a dimmed page (Done, the scrim or a pull down
+     closes it). Choices apply at once; Reset clears what the panel holds. */
+  function filterSheet(more, btn, done, reset, onReset) {
+    const bar = more.parentNode;
+    function open(on) {
+      if (on) sheets.forEach(function (s) { if (s.more !== more) s.open(false); });
+      more.classList.toggle('open', on);
+      btn.setAttribute('aria-expanded', on);
+      if (!phone.matches) { if (on) more.style.left = btn.offsetLeft + 'px'; return; }
+      if (on) { moreScrim.hidden = false; requestAnimationFrame(function () { moreScrim.classList.add('open'); }); }
+      else { moreScrim.classList.remove('open'); setTimeout(function () { if (!sheets.some(function (s) { return s.more.classList.contains('open'); })) moreScrim.hidden = true; }, 260); }
+      document.body.style.overflow = on || state.currentId ? 'hidden' : '';
+    }
+    // The sheet has to live outside the toolbar: the toolbar's blur would trap a fixed element inside it.
+    function place() {
+      if (phone.matches) { if (more.parentNode !== document.body) document.body.appendChild(more); }
+      else { open(false); if (more.parentNode !== bar) bar.appendChild(more); }
+    }
+    place();
+    if (phone.addEventListener) phone.addEventListener('change', place); else phone.addListener(place);
+    btn.addEventListener('click', function (e) { e.stopPropagation(); open(!more.classList.contains('open')); });
+    // On a computer a click anywhere outside the panel closes it, as a menu does.
+    document.addEventListener('click', function (e) {
+      if (!phone.matches && more.classList.contains('open') && !more.contains(e.target) && e.target.isConnected) open(false);
+    });
+    done.addEventListener('click', function () { open(false); });
+    reset.addEventListener('click', onReset);
+    // Pull the sheet down to close it.
+    let y0 = null, d = 0, sp = null;
+    more.addEventListener('touchstart', function (e) { y0 = more.scrollTop <= 0 ? e.touches[0].clientY : null; d = 0; sp = speedMeter(); }, { passive: true });
+    more.addEventListener('touchmove', function (e) {
+      if (y0 === null) return;
+      d = e.touches[0].clientY - y0; sp.add(d);
+      if (d > 0) { more.style.transition = 'none'; more.style.transform = 'translateY(' + d + 'px)'; }
+    }, { passive: true });
+    const end = function (cancelled) {
+      if (y0 === null) return;
+      y0 = null; more.style.transition = ''; more.style.transform = '';
+      if (cancelled !== true && d > 0 && dragGoes(d, sp.get(), 80)) open(false);
+    };
+    more.addEventListener('touchend', end, { passive: true });
+    more.addEventListener('touchcancel', function () { end(true); }, { passive: true });
+    sheets.push({ more: more, open: open });
+  }
+  // Close whichever sheet is open; true when one was.
+  function closeSheets() {
+    const was = sheets.filter(function (s) { return s.more.classList.contains('open'); });
+    was.forEach(function (s) { s.open(false); });
+    return was.length > 0;
+  }
+  moreScrim.addEventListener('click', closeSheets);
+  filterSheet($('#more'), $('#filters-btn'), $('#more-done'), $('#more-reset'), function () {
+    Object.assign(state, { sport: '', type: '', usage: '', cert: false, ins: false, sort: 'new' });
+    $('#f-sport').value = ''; $('#f-type').value = ''; $('#f-usage').value = ''; $('#sort').value = 'new';
+    render();
+  });
+  filterSheet($('#gu-more'), $('#gu-filters-btn'), $('#gu-more-done'), $('#gu-more-reset'), guSheetReset);
+  (function () {
+    // Pull an open item down (from the top of the page) to close it.
+    const scrim = $('#scrim'), sheet = $('#sheet');
+    let y0 = null, x0 = 0, drag = 0, sp = null;
+    scrim.addEventListener('touchstart', function (e) {
+      y0 = phone.matches && scrim.scrollTop <= 0 && !e.target.closest('.thumbs') ? e.touches[0].clientY : null;
+      x0 = y0 === null ? 0 : e.touches[0].clientX; drag = 0; sp = speedMeter();
+    }, { passive: true });
+    scrim.addEventListener('touchmove', function (e) {
+      if (y0 === null) return;
+      const dy = e.touches[0].clientY - y0, dx = e.touches[0].clientX - x0;
+      if (!drag && (dy <= 0 || Math.abs(dx) > Math.abs(dy))) { if (Math.abs(dx) > 8 || dy < -4) y0 = null; return; }
+      drag = dy; sp.add(dy);
+      e.preventDefault();
+      sheet.style.transition = 'none';
+      sheet.style.transform = 'translateY(' + Math.max(0, dy) + 'px)';
+    }, { passive: false });
+    const end = function (cancelled) {
+      if (y0 === null) return;
+      y0 = null;
+      sheet.style.transition = '';
+      // Far enough, or a quick flick down, closes it (like a sheet on the iPhone); a flick back up keeps it.
+      if (cancelled !== true && drag > 0 && dragGoes(drag, sp.get(), 110)) {
+        sheet.style.transform = 'translateY(100%)';
+        go(listHash());
+        setTimeout(function () { sheet.style.transform = ''; }, 340);
+      } else sheet.style.transform = '';
+      drag = 0;
+    };
+    scrim.addEventListener('touchend', end, { passive: true });
+    scrim.addEventListener('touchcancel', function () { end(true); }, { passive: true });
+  })();
+  $('#reload').addEventListener('click', reloadAll);
+  /* ---------- Add photo: take or pick a picture, frame it (JsCrop), save it to Drive ---------- */
+  let addingId = null;
+  const uploading = {};
+  function startAdd(id) {
+    if (uploading[id]) return;
+    addingId = id;
+    const picker = $('#picker');
+    picker.value = '';
+    // Several photos at once, from the photo library.
+    picker.multiple = true;
+    picker.click();
+  }
+  $('#picker').addEventListener('change', function (e) {
+    const files = Array.prototype.slice.call(e.target.files || []);
+    const id = addingId;
+    addingId = null;
+    if (files.length && id) upload(id, files);
+  });
+
+  function setBusy(id, text) {
+    const targets = [];
+    const cell = document.querySelector('.cell[data-cell="' + String(id).replace(/["\\]/g, '\\$&') + '"] .media');
+    if (cell) targets.push(cell);
+    if (state.currentId === id || state.currentId === 'gu:' + id) { const st = $('#d-stage .media'); if (st) targets.push(st); }
+    targets.forEach(function (m) {
+      let b = m.querySelector('.busy');
+      if (!text) { if (b) b.remove(); return; }
+      if (!b) { b = document.createElement('div'); b.className = 'busy'; m.appendChild(b); }
+      b.innerHTML = '<i></i><span>' + esc(text) + '</span>';
+    });
+  }
+
+  let toastTimer;
+  function toast(msg, isError) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.toggle('error', !!isError);
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, isError ? 6000 : 3200);
+  }
+
+  // id is an Item ID (AM-0015, or GU-0001 in Game Used).
+  // First each photo is framed (square or as it is, see JsCrop); Cancel there drops the whole batch.
+  // Then they are sent one after the other; each gets the next free name (AM-0015-2, -3...).
+  function upload(id, files) {
+    const isGu = id.indexOf('GU-') === 0;
+    const item = isGu ? findGu(id) : state.items.find(function (i) { return i.id === id; });
+    if (!item) return;
+    uploading[id] = true;
+    const photos = [], errors = [];
+    const message = function (err) { return err && err.message ? err.message : String(err || ''); };
+    let cancelled = false;
+    files.reduce(function (chain, file, i) {
+      return chain.then(function () {
+        if (cancelled) return;
+        return framePhoto(file, i, files.length).then(function (dataUrl) {
+          if (dataUrl === null) cancelled = true; else photos.push(dataUrl);
+        }, function (err) { errors.push(message(err)); });
+      });
+    }, Promise.resolve()).then(function () {
+      if (cancelled) { delete uploading[id]; return; }
+      const total = photos.length + errors.length;
+      const saved = [];
+      const label = function (text) { return total > 1 ? text + ' (' + (saved.length + errors.length + 1) + ' of ' + total + ')' : text; };
+      return photos.reduce(function (chain, dataUrl) {
+        return chain.then(function () {
+          setBusy(id, label('Saving to Drive…'));
+          return send(id, dataUrl, function (pct) { setBusy(id, label('Saving to Drive… ' + pct + '%')); }).then(function (res) {
+            localPreview[res.fileId] = dataUrl;
+            item.photos.push(res.fileId);
+            saved.push(res.name);
+          }, function (err) { errors.push(message(err)); });
+        });
+      }, Promise.resolve()).then(function () {
+        delete uploading[id];
+        setBusy(id, null);
+        if (saved.length) {
+          if (isGu) { renderGu(true); if (state.currentGu === id) openGu(id); }
+          else {
+            // Game Used shows this item's photos too when it is signed there.
+            render(true);
+            if (state.currentId === id) openItem(id);
+            renderGu(true);
+          }
+        }
+        if (!errors.length) toast(total > 1 ? total + ' photos saved' : 'Photo saved as ' + saved[0]);
+        else if (saved.length) toast(saved.length + ' of ' + total + ' photos saved. ' + errors[0], true);
+        else toast((total > 1 ? 'The photos were not saved. ' : 'The photo was not saved. ') + errors[0], true);
+      });
+    });
+  }
+
+  /* Sends the photo in small pieces: one big request from a phone never reached the script. */
+  const CHUNK = 180000;
+  function call(fn) {
+    const args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      let tries = 0;
+      (function attempt() {
+        const runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(function (err) {
+          // Network hiccups get two more chances; errors from the script itself do not.
+          const net = /network|connection|timeout|http 0|failed to fetch/i.test(String(err && err.message || err));
+          if (net && ++tries < 3) setTimeout(attempt, 800 * tries); else reject(err);
+        });
+        runner[fn].apply(runner, args);
+      })();
+    });
+  }
+  function send(id, dataUrl, progress) {
+    const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+    if (!(window.google && google.script && google.script.run)) {
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          const item = id.indexOf('GU-') === 0 ? findGu(id) : state.items.find(function (i) { return i.id === id; });
+          resolve({ fileId: dataUrl, name: id + (item.photos.length ? '-' + (item.photos.length + 1) : '') + '.jpg' });
+        }, 600);
+      });
+    }
+    const total = Math.ceil(b64.length / CHUNK);
+    const begin = call('beginPhoto', id);
+    return begin.then(function (ticket) {
+      let i = 0;
+      function next() {
+        if (i >= total) return call('finishPhoto', ticket, total);
+        const k = i++;
+        return call('putPhotoChunk', ticket, k, b64.slice(k * CHUNK, (k + 1) * CHUNK)).then(function () {
+          progress(Math.round(i / total * 100));
+          return next();
+        });
+      }
+      return next();
+    });
+  }
+
+  $('#sheet').addEventListener('click', function (e) {
+    const add = e.target.closest('[data-add]');
+    if (add) startAdd(add.dataset.add);
+  });
+
+  $('#grid').addEventListener('click', function (e) {
+    const add = e.target.closest('[data-add]');
+    if (add) { startAdd(add.dataset.add); return; }
+    const card = e.target.closest('.card[data-id]');
+    if (card) go(card.dataset.id);
+  });
+  $('#scrim').addEventListener('click', function (e) { if (e.target === e.currentTarget) go(listHash()); });
+  document.addEventListener('keydown', function (e) {
+    const openMenu = $('.menu.open');
+    if (e.key === 'Escape' && openMenu) { toggleMenu(false); return; }
+    if (e.key === 'Escape' && closeSheets()) return;
+    if (!state.currentId) {
+      const q = { am: $('#q'), gu: $('#gu-q') }[state.screen];
+      if (q && e.key === '/' && !topLayer() && document.activeElement !== q) { e.preventDefault(); q.focus(); }
+      return;
+    }
+    // A layer over the panel (the photo framing, the video) keeps its keys: the ruler and the video's own
+    // arrows must not move to the next panel behind it.
+    const top = topLayer();
+    if (top && top !== $('#sheet')) return;
+    if (e.key === 'Escape') go(listHash());
+    if (e.key === 'ArrowRight') stepPanel(1);
+    if (e.key === 'ArrowLeft') stepPanel(-1);
+  });
+  /* Tab stays inside what is open on top (the photo framing, the full-screen photo, a panel, the Filters sheet on a
+     phone), as a modal dialog should: from the last control it goes back to the first, and Shift+Tab the other way. */
+  function topLayer() {
+    const crop = $('#crop');
+    if (crop && !crop.hidden) return crop;
+    if (videoOpen) return $('#video');
+    if (zoom.open) return $('#zoom');
+    if (state.currentId) return $('#sheet');
+    const sheet = phone.matches && sheets.find(function (s) { return s.more.classList.contains('open'); });
+    return sheet ? sheet.more : null;
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab') return;
+    const box = topLayer();
+    if (!box) return;
+    const all = $$('a[href], button:not([disabled]), input, select, video[controls]:not([hidden]), [tabindex="0"]').filter(function (el) {
+      return box.contains(el) && el.getClientRects().length && !el.closest('[hidden]');
+    });
+    if (!all.length) return;
+    const first = all[0], last = all[all.length - 1], at = document.activeElement;
+    if (!box.contains(at) || (e.shiftKey && at === first) || (!e.shiftKey && at === last)) {
+      e.preventDefault();
+      (e.shiftKey ? last : first).focus();
+    }
+  }, true);
+  function onScroll() {
+    // Back to the top: shown about two screens below the start of the list, gone near it (and on the home page).
+    const show = window.scrollY > listTop() + window.innerHeight * 2;
+    $('#to-top').classList.toggle('show', show);
+    $('#to-top').tabIndex = show ? 0 : -1;
+    const view = state.screen && $(SCREENS[state.screen]);
+    const tb = view && view.querySelector('.toolbar');
+    if (!tb) return;
+    const hero = view.querySelector('.hero');
+    tb.classList.toggle('stuck', window.scrollY > hero.offsetHeight + (parseFloat(getComputedStyle(tb).marginTop) || 0) - 1);
+  }
+  // At most once per frame: it measures the page.
+  let scrollTick = false;
+  window.addEventListener('scroll', function () {
+    if (scrollTick) return;
+    scrollTick = true;
+    requestAnimationFrame(function () { scrollTick = false; onScroll(); });
+  }, { passive: true });
+  // Where the list starts (just under the stuck search bar): the button shows about two screens below it.
+  function listTop() {
+    const view = state.screen && $(SCREENS[state.screen]);
+    const main = view && view.querySelector('main'), tb = view && view.querySelector('.toolbar');
+    if (!main || !tb || state.screen === 'hub') return Infinity;
+    return main.getBoundingClientRect().top + window.scrollY - tb.offsetHeight;
+  }
+  // It goes all the way up, to the collection's title and summary.
+  $('#to-top').addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: lessMotion() ? 'auto' : 'smooth' });
+  });
+
+  /* ---------- Start ---------- */
+  trimKeptPhotos();
+  renderHub();
+  loadTeams();
+  load();
+  loadGu();
+  loadLogos();
+  if (hasHistory) google.script.url.getLocation(function (loc) { route(loc.hash || ''); });
+  else route();
+</script>
