@@ -5,12 +5,17 @@
    - every field the server sends on an item or team is in the fixtures (so the pages
      are tested with it), except "checks" and "links", which the fixtures may leave out;
    - a field has the same kind of value on both sides (text, number, list...); null is always allowed.
+   The demo data (tests/demo-data.js) is checked the same way: it must keep the shape the server sends,
+   even though its names and teams are real.
    Usage: node --test tests/unit/*.test.js */
 'use strict';
 const test = require('node:test');
 const assert = require('assert');
 const gas = require('./gas');
 require('../fixtures');
+const FIXTURES = { collection: globalThis.TEST_COLLECTION, gu: globalThis.TEST_GU, teams: globalThis.TEST_TEAMS };
+require('../demo-data');
+const DEMO = { collection: globalThis.TEST_COLLECTION, gu: globalThis.TEST_GU, teams: globalThis.TEST_TEAMS };
 
 function shape(v, out, p) {
   const t = v === null || v === undefined ? 'null' : Array.isArray(v) ? 'list' : typeof v === 'object' ? 'record' : typeof v;
@@ -47,9 +52,12 @@ function rich() {
 }
 
 const api = rich();
-test('Autographed Memorabilia: fixtures and server agree', function () { compare('collection', api.getCollection(), globalThis.TEST_COLLECTION); });
-test('Game Used: fixtures and server agree', function () { compare('gu', api.getGameUsed(), globalThis.TEST_GU); });
-test('Teams: fixtures and server agree', function () { compare('teams', api.getTeams(), globalThis.TEST_TEAMS); });
+test('Autographed Memorabilia: fixtures and server agree', function () { compare('collection', api.getCollection(), FIXTURES.collection); });
+test('Game Used: fixtures and server agree', function () { compare('gu', api.getGameUsed(), FIXTURES.gu); });
+test('Teams: fixtures and server agree', function () { compare('teams', api.getTeams(), FIXTURES.teams); });
+test('Autographed Memorabilia: demo data and server agree', function () { compare('collection', api.getCollection(), DEMO.collection); });
+test('Game Used: demo data and server agree', function () { compare('gu', api.getGameUsed(), DEMO.gu); });
+test('Teams: demo data and server agree', function () { compare('teams', api.getTeams(), DEMO.teams); });
 test('the mock server (tests/mock-gas.js) answers exactly the functions Code.gs offers the page', function () {
   const fs = require('fs'), path = require('path');
   const gs = fs.readFileSync(path.join(__dirname, '..', '..', 'Code.gs'), 'utf8');
