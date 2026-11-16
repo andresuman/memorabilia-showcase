@@ -1,6 +1,6 @@
 # Memorabilia Showcase
 
-Showcase and manage your autographed and game-used sports memorabilia — a web app backed by a Google Sheet. No coding needed to use it: your collection lives in a spreadsheet and in Drive folders, and the app shows it as a website.
+Showcase and manage your autographed and game-used sports memorabilia — a Google Apps Script web app backed by a Google Sheet. No coding needed to use it: your collection lives in a spreadsheet and in Drive folders, and the app shows it as a website.
 
 **[Try the demo](https://andresuman.github.io/memorabilia-showcase/demo.html)** — a small sample collection you can click through, no account needed. It uses real player and team names so it reads like a real collection, and it shows the real sample photos, team logos and videos of the play; the certificate numbers are made up and the items are examples, not real items. Three sample items have no photo on purpose, so you can see what an item without a photo looks like.
 
@@ -23,8 +23,8 @@ A signed item links to its game-used piece ("Also in Game Used") and back. You c
 
 1. **Copy the template spreadsheet** — [Memorabilia Showcase — Template](https://docs.google.com/spreadsheets/d/1LbIGqyrgWK1JepBPatQtHc_QKta18Ph3gcqjYT63uiY/copy) (File → Make a copy). It has the three tabs with the right headers and a few sample items (real player and team names, made-up certificate numbers). The Teams tab already lists all 32 NFL and 30 MLB teams with their colors and stadiums. Delete the sample rows and add your own — or keep them while you try the app out.
 2. **Make folders in Google Drive for your photos** — one for autographed photos, one for game-used photos and videos, one for team logos. Photos are named by Item ID (`AM-0015.jpg`, `GU-0001.jpg`). To try the app right away, copy the sample files into your folders: [sample autographed photos](https://drive.google.com/drive/folders/1t8b2KxvxxJXR3waaIj0MY8jyMCyo6fJN), [sample game-used photos and videos](https://drive.google.com/drive/folders/1NdxQgHQX-ANtyQTX5lFGnj_5foF30cn-) and [sample team logos](https://drive.google.com/drive/folders/134y3B1OYR_PKutPFloptfbL2qtkyZaCy).
-3. **Point the code at your sheet and folders** — paste the spreadsheet ID and the folder IDs into the `CONFIG` block at the top of `Code.gs`. ([Where to find the IDs](SETUP.md#3-point-the-code-at-your-sheet-and-folders).)
-4. **Deploy** — on a Mac, double-click `deploy.command`; it runs the tests, pushes the files and publishes your web app. ([By hand](SETUP.md#4-deploy), if you'd rather.)
+3. **Put the code in Google Apps Script** — download the code ([ZIP file](https://github.com/andresuman/memorabilia-showcase/archive/refs/heads/main.zip)), open your spreadsheet → Extensions → Apps Script, paste the files in, and fill in the four IDs (your spreadsheet and your folders) in `CONFIG` at the top of `Code.gs`. ([The details](SETUP.md#3-get-the-code-and-put-it-in-apps-script).)
+4. **Publish the web app** — Deploy → New deployment → Web app, **Execute as: Me**, **Who has access: Only myself**. Open the URL it gives you and accept the permissions. ([The details](SETUP.md#4-publish-the-web-app).)
 
 That's it. Open your web app URL and it shows your collection.
 
@@ -40,7 +40,7 @@ The app never writes to the spreadsheet. It reads the tabs (read-only) and only 
 
 ## Full guide
 
-[SETUP.md](SETUP.md) has the complete reference: every column and its rules, the folders and file names, the permissions the app asks for, how the pages work, and the tests.
+[SETUP.md](SETUP.md) walks through the setup step by step, in plain language. [DEVELOPERS.md](DEVELOPERS.md) has the technical reference: the exact columns and their rules, how the pages work, the permissions, the tests, and the one-click deploy for the terminal.
 
 ## License
 
